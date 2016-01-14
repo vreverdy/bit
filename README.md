@@ -1,2 +1,2 @@
-# bit_reference
-ISO WG21 C++ proposal: bit_reference
+# bit_utilities
+ISO WG21 C++ proposal: bit utilities
