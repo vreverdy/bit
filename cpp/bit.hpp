@@ -1,7 +1,7 @@
 // ================================== BIT =================================== //
 // Project:         The C++ Bit Library
 // Name:            bit.hpp
-// Description:     Provides utilities to manipulate bits efficiently in C++
+// Description:     Includes the whole C++ bit library
 // Creator:         Vincent Reverdy
 // Contributor(s):  Vincent Reverdy [2015-2016]
 // License:         BSD 3-Clause License
