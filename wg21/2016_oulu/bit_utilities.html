@@ -1,0 +1,587 @@
+<html>
+
+<head>
+<title>Wording for fundamental bit manipulation utilities</title>
+<style type="text/css">
+  p {text-align:justify}
+  li {text-align:justify}
+  blockquote.note
+  {
+    background-color:#E0E0E0;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+  }
+  ins {background-color:#A0FFA0}
+  del {background-color:#FFA0A0}
+</style>
+</head>
+
+<body>
+<table>
+<tr>
+    <td align="left"><b>Document number:</b></td>
+    <td align="left">P0237R1</td>
+</tr>
+<tr>
+    <td align="left"><b>Date:</b></td>
+    <td align="left">2016-05-30</td>
+</tr>
+<tr>
+    <td align="left"><b>Project:</b></td>
+    <td align="left">ISO JTC1/SC22/WG21: Programming Language C++</td>
+</tr>
+<tr>
+    <td align="left"><b>Audience:</b></td>
+    <td align="left">LEWG, SG14, SG6</td>
+</tr>
+<tr>
+    <td align="left"><b>Reply to:</b></td>
+    <td align="left">Vincent Reverdy &lt;<a href="mailto:vince.rev@gmail.com">vince.rev@gmail.com</a>&gt;</td>
+</tr>
+<tr>
+    <td></td>
+    <td align="left">Robert J. Brunner</td>
+</tr>
+</table>
+
+<h1><center>Wording for fundamental bit manipulation utilities</center></h1>
+
+<h2>Table of Contents</h2>
+<ul>
+    <li><a href="#0.0">History and feedback</a></li>
+    <li><a href="#1.0">Introduction</a></li>
+    <li><a href="#2.0">Examples</a></li>
+    <li><a href="#3.0">Proposed wording</a></li>
+    <li><a href="#4.0">Acknowledgements</a></li>
+</ul>
+
+<h2><a name="0.0">History and feedback</a></h2>
+<p>The idea of bit manipulation utilities has been originally proposed in the 2016 pre-Jacksonville mailing and has been discussed in both SG6 and LEWG in Jacksonville. The original document, <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0237r0.pdf">P0237R0</a> fully describes and discusses the idea of fundamental bit manipulation utilities for the C++ language. Another proposal, <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0161r0.pdf">P0161R0</a> had the same motivations but was focusing on bitsets. As <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0237r0.pdf">P0237R0</a> seemed more generic and not restrained to the scope of <tt>std::bitset</tt>, we decided to push forward <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0237r0.pdf">P0237R0</a>, while still keeping in mind the functionalities and performances allowed by <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0161r0.pdf">P0161R0</a>. The genericity and abstraction offered by <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0237r0.pdf">P0237R0</a> should not introduce a performance overhead (at least with the <tt>-O2</tt> optimization level on most compilers) when compared to <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0237r0.pdf">P0161R0</a> and <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n3864.html">N3864</a>.</p>
+
+<p>The feedback from the Jacksonville meeting was positive: in top of their intrinsics functionalities, bit manipulation utilities have the potential to serve as a common basis for a <tt>std::dynamic_bitset</tt> replacement of <tt>std::vector&lt;bool&gt;</tt> and for bounded and unbounded precision arithmetic as discussed in <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4038.html">N4038</a>.</p>
+
+<p>In terms of design, the following guidance was given by LEWG:
+<ul>
+    <li>Restrain <tt>std::bit_reference</tt> to unsigned fundamental integer types? 
+    [SF: 6, F: 3, N: 0, A: 0, SA :0]</li>
+    <li><tt>std::bit_reference</tt> provides no arithmetic except what the paper provides explicitly? [Unanimous consent]</li>
+    <li>In small discussion groups, introducing <tt>std::bit_value</tt> was considered to be good idea </li>
+</ul>
+</p>
+
+<p>In Jacksonville, the following questions were raised:</p>
+<ul>
+    <li>How to deal with word endianness?</li>
+    <li>How to provide the possibility to get a mask from the bit position?</li>
+    <li>How to deal with infinite ranges of bits, particularly for unbounded precision arithmetic?</li>
+    <li>What bitwise logic operators should bits provide?</li>
+    <li>How to make <tt>std::bit_iterator</tt> compatible with proxy iterators presented in <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0022r1.html">P0022R1</a>?</li>
+</ul>
+</p>
+
+If bit utilities make it to the standard, they will be used, at least, as the basis for an implementation of a dynamic bitset, and are likely to be used as an interface to the underlying containers of words for unbounded and bounded precision arithmetic.
+
+<h2><a name="1.0">Introduction</a></h2>
+<p>
+This paper proposes a wording for fundamental bit utilities: <tt>std::bit_value</tt>, <tt>std::bit_reference</tt>, <tt>std::bit_pointer</tt> and <tt>std::bit_iterator</tt>. An in-depth discussion of the motivations and an in-depth exploration of the design space can be found in <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0237r0.pdf">P0237R0</a>. In short, this paper proposes a set of 4 main utility classes to serve as bit abstractions in order to offer a common and standardized interface for libraries and programs that require bit manipulations. These bit utilities both emulate bits that are easy to use for users, and provide an interface to access the underlying words to implement efficient low-level algorithms.
+</p>
+
+<h2><a name="2.0">Examples</a></h2>
+<p>An implementation of the fundamental bit utilities is available at <a href="https://github.com/vreverdy/bit">https://github.com/vreverdy/bit</a>. Before presenting a wording, we illustrate some of the functionalities of the library.</p>
+
+<p> First, <tt>std::bit_value</tt> and <tt>std::bit_reference</tt>:</p>
+<pre>
+  // First, we create an integer
+  using uint_t = unsigned long long int;
+  uint_t intval = 42;                                        // 101010
+  
+  // Then we create aligned bit values and a bit references on this integer
+  std::bit_value bval0(intval);                              // Creates a bit value from the bit at position 0 of intval
+  std::bit_reference&lt;uint_t&gt; bref0(intval);                  // Creates a bit reference from the bit at position 0 of intval
+
+  // And unaligned bit values and a bit references on this integer
+  std::bit_value bval5(intval, 5);                           // Creates a bit value from the bit at position 5 of intval 
+  std::bit_reference&lt;uint_t&gt; bref5(intval, 5);               // Creates a bit reference from the bit at position 5 of intval
+
+  // Display them
+  std::cout&lt;&lt;bval0&lt;&lt;bref0&lt;&lt;bval5&lt;&lt;bref5&lt;&lt;std::endl;          // Prints 0011
+  
+  // Change their values conditionnally
+  if (static_cast&lt;bool&gt;(bval5)) {
+    bval0.flip();  // Flips the bit without affecting the integer
+    bref5.reset(); // Resets the bit to zero and affects the integer
+  }
+  std::cout&lt;&lt;bval0&lt;&lt;bref0&lt;&lt;bval5&lt;&lt;bref5&lt;&lt;std::endl;          //  Prints 1010
+  
+  // Prints the location and the corresponding mask of bit references
+  std::cout&lt;&lt;bref0.position()&lt;&lt;" "&lt;&lt;bref0.mask()&lt;&lt;std::endl; // Prints 0 and 1
+  std::cout&lt;&lt;bref5.position()&lt;&lt;" "&lt;&lt;bref5.mask()&lt;&lt;std::endl; // Prints 5 and 32
+</pre>
+
+<p> Then, with <tt>std::bit_pointer</tt>:</p>
+<pre>
+  // First, we create an array of integers
+  using uint_t = unsigned long long int;
+  std::array&lt;uint_t, 2&gt; intarr = {42, 314};
+  
+  // Then we create a bit reference and a bit pointer
+  std::bit_reference&lt;uint_t&gt; bref5(intarr[0], 5);            // Creates a bit reference from the bit at position 5 of the first element of the array
+  std::bit_pointer&lt;uint_t&gt bptr(intarr.data());              // Creates a bit pointer from the bit at position 0 of the first element of the array
+
+  // We flip the first bit, and sets the second one to 1 with two methods
+  bptr->flip();                                              // Flips the bit
+  ++bptr;                                                    // Goes to the next bit
+  *bptr.set();                                               // Sets the bit
+  
+  // Then we advance the bit pointer by more than 64 bits and display its position
+  bptr += 71;
+  std::cout&lt;&lt;bptr->position()&lt;&lt;std::endl;                    // Prints 7 as the bit is now in the second element of the array
+  
+  // And finally we set the bit pointer to the position of the bit reference
+  bptr = &amp;bref5;
+</pre>
+
+<p> And finally <tt>std::bit_iterator</tt>, which can serve as a basis of bit algorithm:</p>
+<pre>
+  // First, we create a list of integers
+  using uint_t = unsigned short int;
+  std::list&lt;uint_t&gt; intlst = {40, 41, 42, 43, 44};
+  
+  // Then we create a pair of aligned bit iterators
+  auto bfirst = std::make_bit_iterator(std::begin(intlst));
+  auto bend = std::make_bit_iterator(std::end(intlst));
+
+  // Then we count the number of bits set to 1
+  auto result = std::count(bfirst, bend, std::bit(1));
+  
+  // We take a subset of the list
+  auto bfirst2 = std::make_bit_iterator(std::begin(intlst), 5);
+  auto bend2 = std::make_bit_iterator(std::end(intlst) - 1, 2);
+  
+  // And we reverse the subset
+  std::reverse(bfirst2, bend2);
+</pre>
+
+<p> The count algorithm can be implemented as:</p>
+<pre>
+// Counts the number of bits equal to the provided bit value
+template &lt;class InputIt, class T&gt; 
+typename bit_iterator&lt;InputIt&gt;::difference_type
+count(
+  bit_iterator&lt;InputIt&gt; first, 
+  bit_iterator&lt;InputIt&gt; last, 
+  const T&amp; value
+)
+{
+  // Initialization
+  using underlying_type = typename bit_iterator&lt;InputIt&gt;::underlying_type;
+  using difference_type = typename bit_iterator&lt;InputIt&gt;::difference_type;
+  constexpr difference_type digits = binary_digits&lt;underlying_type&gt;::value;
+  const bit_value input = value;
+  difference_type result = 0;
+  auto it = first.base();
+    
+  // Computation when bits belong to several underlying values
+  if (first.base() != last.base()) {
+    if (first.position() != 0) {
+      result = _popcnt(*first.base() &gt;&gt; first.position());
+      ++it;
+    }
+    for (; it != last.base(); ++it) {
+      result += _popcnt(*it);
+    }
+    if (last.position() != 0) {
+      result += _popcnt(*last.base() &lt;&lt; (digits - last.position()));
+    }
+  // Computation when bits belong to the same underlying value
+  } else {
+    result = _popcnt(_bextr(
+      *first.base(), 
+      static_cast&lt;underlying_type&gt;(first.position()), 
+      static_cast&lt;underlying_type&gt;(last.position() - first.position())
+    ));
+  }
+    
+  // Negates when the number of zero bits is requested
+  if (!static_cast&lt;bool&gt;(input)) {
+    result = (last - first) - result;
+  }
+    
+  // Finalization
+  return result;
+}
+</pre>
+
+As illustrated in these examples, bit utilities act as a convenient interface between high level code that can use bit manipulation through bit iterators, and low level algorithms that can call dedicated instruction sets and compiler intrinsics.
+
+<h2><a name="3.0">Proposed Wording</a></h2>
+
+<h3><a name="3.1">Header <tt>&lt;bit&gt;</tt></a></h2>
+<p>
+Add the following header to the standard: 
+</p>
+<pre>
+&lt;bit&gt;
+</pre>
+
+<h3><a name="3.2">Class <tt>std::bit_value</tt></a></h3>
+
+<p>
+Add to the <tt>&lt;bit&gt;</tt> synopsis:
+</p>
+
+<pre>
+// Bit value class definition
+class bit_value 
+{public:
+    
+  // Types
+  using size_type = std::size_t;
+    
+  // Lifecycle
+  bit_value() noexcept = default;
+  template &lt;class T&gt; 
+  constexpr bit_value(bit_reference&lt;T&gt; val) noexcept;
+  template &lt;class UIntType&gt; 
+  explicit constexpr bit_value(UIntType val) noexcept;
+  template &lt;class UIntType&gt; 
+  constexpr bit_value(UIntType val, size_type pos);
+    
+  // Assignment
+  template &lt;class T&gt; 
+  bit_value&amp; operator=(bit_reference&lt;T&gt; val) noexcept;
+  template &lt;class UIntType&gt; 
+  bit_value&amp; operator=(UIntType val) noexcept;
+
+  // Conversion
+  explicit constexpr operator bool() const noexcept;
+
+  // Bit manipulation
+  void set(bool b) noexcept;
+  void set() noexcept;
+  void reset() noexcept;
+  void flip() noexcept;
+};
+
+// Comparison operators
+constexpr bool operator==(bit_value lhs, bit_value rhs) noexcept;
+constexpr bool operator!=(bit_value lhs, bit_value rhs) noexcept;
+constexpr bool operator&lt;(bit_value lhs, bit_value rhs) noexcept;
+constexpr bool operator&lt;=(bit_value lhs, bit_value rhs) noexcept;
+constexpr bool operator&gt;(bit_value lhs, bit_value rhs) noexcept;
+constexpr bool operator&gt;=(bit_value lhs, bit_value rhs) noexcept;
+
+// Stream functions
+template &lt;class CharT, class Traits&gt;
+std::basic_ostream&lt;CharT, Traits&gt;&amp; operator&lt;&lt;(
+  std::basic_ostream&lt;CharT, Traits&gt;&amp; os,
+  bit_value x
+);
+template &lt;class CharT, class Traits&gt;
+std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
+  std::basic_istream&lt;CharT, Traits&gt;&amp; is,
+  bit_value&amp; x
+);
+    
+// Make functions
+template &lt;class T&gt;
+constexpr bit_value make_bit_value(T val) noexcept;
+template &lt;class T&gt;
+constexpr bit_value make_bit_value(
+  T val, 
+  typename bit_value::size_type pos
+);
+</pre>
+
+<h3><a name="3.3">Class template <tt>std::bit_reference</tt></a></h3>
+
+<p>
+Add to the <tt>&lt;bit&gt;</tt> synopsis:
+</p>
+
+<pre>
+// Bit reference class definition
+template &lt;class UIntType&gt;
+class bit_reference
+{public:
+    
+  // Types
+  using underlying_type = UIntType;
+  using size_type = std::size_t;
+
+  // Lifecycle
+  template &lt;class T&gt; 
+  constexpr bit_reference(const bit_reference&lt;T&gt;&amp; other) noexcept;
+  explicit constexpr bit_reference(underlying_type&amp; ref) noexcept;
+  constexpr bit_reference(underlying_type&amp; ref, size_type pos);
+
+  // Assignment
+  bit_reference&amp; operator=(const bit_reference&amp; other) noexcept;
+  template &lt;class T&gt; 
+  bit_reference&amp; operator=(const bit_reference&lt;T&gt;&amp; other) noexcept;
+  bit_reference&amp; operator=(bit_value val) noexcept;
+  bit_reference&amp; operator=(underlying_type val) noexcept;
+    
+  // Conversion
+  explicit constexpr operator bool() const noexcept;
+
+  // Access
+  constexpr bit_pointer&lt;UIntType&gt; operator&amp;() const noexcept;
+    
+  // Swap members
+  template &lt;class T&gt; 
+  void swap(bit_reference&lt;T&gt; other);
+  void swap(bit_value&amp; other);
+
+  // Bit manipulation
+  void set(bool b) noexcept;
+  void set() noexcept;
+  void reset() noexcept;
+  void flip() noexcept;
+
+  // Underlying details
+  constexpr underlying_type* address() const noexcept;
+  constexpr size_type position() const noexcept;
+  constexpr underlying_type mask() const noexcept;
+};
+
+// Swap and exchange
+template &lt;class T, class U&gt;
+void swap(bit_reference&lt;T&gt; lhs, bit_reference&lt;U&gt; rhs) noexcept;
+template &lt;class T&gt;
+void swap(bit_reference&lt;T&gt; lhs, bit_value&amp; rhs) noexcept;
+template &lt;class U&gt;
+void swap(bit_value&amp; lhs, bit_reference&lt;U&gt; rhs) noexcept;
+template &lt;class T, class U = bit_value&gt;
+bit_value exchange(bit_reference&lt;T&gt; x, U&amp;&amp; val);
+
+// Stream functions
+template &lt;class CharT, class Traits, class T&gt;
+std::basic_ostream&lt;CharT, Traits&gt;&amp; operator&lt;&lt;(
+  std::basic_ostream&lt;CharT, Traits&gt;&amp; os,
+  bit_reference&lt;T&gt; x
+);
+template &lt;class CharT, class Traits, class T&gt;
+std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
+  std::basic_istream&lt;CharT, Traits&gt;&amp; is,
+  bit_reference&lt;T&gt;&amp; x
+);
+
+// Make functions
+template &lt;class T&gt;
+constexpr bit_reference&lt;T&gt; make_bit_reference(T&amp; ref) noexcept;
+template &lt;class T&gt;
+constexpr bit_reference&lt;T&gt; make_bit_reference(
+  T&amp; ref, 
+  typename bit_reference&lt;T&gt;::size_type pos
+);
+</pre>
+
+<h3><a name="3.4">Class template <tt>std::bit_pointer</tt></a></h3>
+
+<p>
+Add to the <tt>&lt;bit&gt;</tt> synopsis:
+</p>
+
+<pre>
+// Bit pointer class definition
+template &lt;class UIntType&gt;
+class bit_pointer
+{public:
+    
+  // Types
+  using underlying_type = UIntType;
+  using size_type = std::size_t;
+  using difference_type = std::intmax_t;
+
+  // Lifecycle
+  bit_pointer() noexcept = default;
+  template &lt;class T&gt; 
+  constexpr bit_pointer(const bit_pointer&lt;T&gt;&amp; other) noexcept;
+  explicit constexpr bit_pointer(std::nullptr_t) noexcept;
+  constexpr bit_pointer(std::nullptr_t, size_type);
+  explicit constexpr bit_pointer(underlying_type* ptr) noexcept;
+  constexpr bit_pointer(underlying_type* ptr, size_type pos);
+    
+  // Assignment
+  bit_pointer&amp; operator=(std::nullptr_t) noexcept;
+  bit_pointer&amp; operator=(const bit_pointer&amp; other) noexcept;
+  template &lt;class T&gt; 
+  bit_pointer&amp; operator=(const bit_pointer&lt;T&gt;&amp; other) noexcept;
+  bit_pointer&amp; operator=(underlying_type* ptr) noexcept;
+    
+  // Conversion
+  explicit constexpr operator bool() const noexcept;
+
+  // Access
+  constexpr bit_reference&lt;UIntType&gt; operator*() const noexcept;
+  constexpr bit_reference&lt;UIntType&gt;* operator-&gt;() const noexcept;
+  constexpr bit_reference&lt;UIntType&gt; operator[](difference_type n) const;
+    
+  // Increment and decrement operators
+  bit_pointer&amp; operator++();
+  bit_pointer&amp; operator--();
+  bit_pointer operator++(int);
+  bit_pointer operator--(int);
+  constexpr bit_pointer operator+(difference_type n) const;
+  constexpr bit_pointer operator-(difference_type n) const;
+  bit_pointer&amp; operator+=(difference_type n);
+  bit_pointer&amp; operator-=(difference_type n);
+};
+
+// Non-member arithmetic operators
+template &lt;class T&gt;
+constexpr bit_pointer&lt;T&gt; operator+(
+  typename bit_pointer&lt;T&gt;::difference_type n,
+  bit_pointer&lt;T&gt; x
+);
+template &lt;class T, class U&gt;
+constexpr typename std::common_type&lt;
+  typename bit_pointer&lt;T&gt;::difference_type,
+  typename bit_pointer&lt;U&gt;::difference_type
+&gt;::type operator-(
+  bit_pointer&lt;T&gt; lhs,
+  bit_pointer&lt;U&gt; rhs
+);
+
+// Comparison operators
+template &lt;class T, class U&gt;
+constexpr bool operator==(bit_pointer&lt;T&gt; lhs, bit_pointer&lt;U&gt; rhs) noexcept;
+template &lt;class T, class U&gt;
+constexpr bool operator!=(bit_pointer&lt;T&gt; lhs, bit_pointer&lt;U&gt; rhs) noexcept;
+template &lt;class T, class U&gt;
+constexpr bool operator&lt;(bit_pointer&lt;T&gt; lhs, bit_pointer&lt;U&gt; rhs) noexcept;
+template &lt;class T, class U&gt;
+constexpr bool operator&lt;=(bit_pointer&lt;T&gt; lhs, bit_pointer&lt;U&gt; rhs) noexcept;
+template &lt;class T, class U&gt;
+constexpr bool operator&gt;(bit_pointer&lt;T&gt; lhs, bit_pointer&lt;U&gt; rhs) noexcept;
+template &lt;class T, class U&gt;
+constexpr bool operator&gt;=(bit_pointer&lt;T&gt; lhs, bit_pointer&lt;U&gt; rhs) noexcept;
+
+// Make functions
+template &lt;class T&gt;
+constexpr bit_pointer&lt;T&gt; make_bit_pointer(T* ptr) noexcept;
+template &lt;class T&gt;
+constexpr bit_pointer&lt;T&gt; make_bit_pointer(
+  T* ptr, 
+  typename bit_pointer&lt;T&gt;::size_type pos
+);
+</pre>
+
+<h3><a name="3.5">Class template <tt>std::bit_iterator</tt></a></h3>
+
+<p>
+Add to the <tt>&lt;bit&gt;</tt> synopsis:
+</p>
+
+<pre>
+// Bit iterator class definition
+template &lt;class Iterator&gt;
+class bit_iterator
+{public:
+  
+  // Types
+  using iterator_type = Iterator;
+  using underlying_type = typename _cv_iterator_traits&lt;Iterator&gt;::value_type;
+  using iterator_category = typename std::iterator_traits&lt;Iterator&gt;::iterator_category;
+  using value_type = bit_value;
+  using difference_type = std::intmax_t;
+  using pointer = bit_pointer&lt;underlying_type&gt;;
+  using reference = bit_reference&lt;underlying_type&gt;;
+  using size_type = std::size_t;
+
+  // Lifecycle
+  constexpr bit_iterator();
+  template &lt;class T&gt; 
+  constexpr bit_iterator(const bit_iterator&lt;T&gt;&amp; other);
+  explicit constexpr bit_iterator(iterator_type i);
+  constexpr bit_iterator(iterator_type i, size_type pos);
+
+  // Assignment
+  template &lt;class T&gt;
+  bit_iterator&amp; operator=(const bit_iterator&lt;T&gt;&amp; other);
+  bit_iterator&amp; operator=(iterator_type i);
+
+  // Access
+  constexpr reference operator*() const noexcept;
+  constexpr pointer operator-&gt;() const noexcept;
+  constexpr reference operator[](difference_type n) const;
+
+  // Increment and decrement operators
+  bit_iterator&amp; operator++();
+  bit_iterator&amp; operator--();
+  bit_iterator operator++(int);
+  bit_iterator operator--(int);
+  constexpr bit_iterator operator+(difference_type n) const;
+  constexpr bit_iterator operator-(difference_type n) const;
+  bit_iterator&amp; operator+=(difference_type n);
+  bit_iterator&amp; operator-=(difference_type n);
+
+  // Underlying details
+  constexpr iterator_type base() const;
+  constexpr size_type position() const noexcept;
+  constexpr underlying_type mask() const noexcept;
+};
+
+// Non-member arithmetic operators
+template &lt;class T&gt;
+constexpr bit_iterator&lt;T&gt; operator+(
+  typename bit_iterator&lt;T&gt;::difference_type n,
+  const bit_iterator&lt;T&gt;&amp; i
+);
+template &lt;class T, class U&gt;
+constexpr typename std::common_type&lt;
+  typename bit_iterator&lt;T&gt;::difference_type,
+  typename bit_iterator&lt;U&gt;::difference_type
+&gt;::type operator-(
+  const bit_iterator&lt;T&gt;&amp; lhs,
+  const bit_iterator&lt;U&gt;&amp; rhs
+);
+
+// Comparison operators
+template &lt;class T, class U&gt;
+constexpr bool operator==(const bit_iterator&lt;T&gt;&amp; lhs, const bit_iterator&lt;U&gt;&amp; rhs);
+template &lt;class T, class U&gt;
+constexpr bool operator!=(const bit_iterator&lt;T&gt;&amp; lhs, const bit_iterator&lt;U&gt;&amp; rhs);
+template &lt;class T, class U&gt;
+constexpr bool operator&lt;(const bit_iterator&lt;T&gt;&amp; lhs, const bit_iterator&lt;U&gt;&amp; rhs);
+template &lt;class T, class U&gt;
+constexpr bool operator&lt;=(const bit_iterator&lt;T&gt;&amp; lhs, const bit_iterator&lt;U&gt;&amp; rhs);
+template &lt;class T, class U&gt;
+constexpr bool operator&gt;(const bit_iterator&lt;T&gt;&amp; lhs, const bit_iterator&lt;U&gt;&amp; rhs);
+template &lt;class T, class U&gt;
+constexpr bool operator&gt;=(const bit_iterator&lt;T&gt;&amp; lhs, const bit_iterator&lt;U&gt;&amp; rhs);
+
+// Make functions
+template &lt;class T&gt;
+constexpr bit_iterator&lt;T&gt; make_bit_iterator(T i);
+template &lt;class T&gt;
+constexpr bit_iterator&lt;T&gt; make_bit_iterator(
+  T i,
+  typename bit_iterator&lt;T&gt;::size_type pos
+);
+</pre>
+
+<h3><a name="3.6">Helper struct <tt>std::binary_digits</tt></a></h3>
+
+<p>
+Add to the <tt>&lt;bit&gt;</tt> synopsis:
+</p>
+
+<pre>
+// Binary digits structure definition
+template &lt;class UIntType&gt;
+struct binary_digits 
+: std::integral_constant&lt;std::size_t, std::numeric_limits&lt;UIntType&gt;::digits&gt; 
+{};
+</pre>
+
+<h2><a name="4.0">Acknowledgements</a></h2>
+The authors would like to thank Howard Hinnant, Jens Maurer, Tony Van Eerd, Klemens Morgenstern, Vicente Botet Escriba, Tomasz Kaminski, Odin Holmes and the other contributors of the ISO C++ Standard - Discussion and of the ISO C++ Standard - Future Proposals groups for their initial reviews and comments.
+
+Vincent Reverdy and Robert J. Brunner have been supported by the National Science Foundation Grant AST-1313415. Robert J. Brunner has been supported in part by the Center for Advanced Studies at the University of Illinois.
+
+</body>
+</html>

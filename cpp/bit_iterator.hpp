@@ -90,15 +90,15 @@ class bit_iterator
     template <class T>
     friend constexpr bit_iterator<T> operator+(
         typename bit_iterator<T>::difference_type n,
-        bit_iterator<T> i
+        const bit_iterator<T>& i
     );
     template <class T, class U>
     friend constexpr typename std::common_type<
         typename bit_iterator<T>::difference_type,
         typename bit_iterator<U>::difference_type
     >::type operator-(
-        bit_iterator<T> lhs,
-        bit_iterator<U> rhs
+        const bit_iterator<T>& lhs,
+        const bit_iterator<U>& rhs
     );
 
     // Comparison operators
@@ -401,7 +401,7 @@ bit_iterator<Iterator>::mask(
 template <class T>
 constexpr bit_iterator<T> operator+(
     typename bit_iterator<T>::difference_type n,
-    bit_iterator<T> i
+    const bit_iterator<T>& i
 )
 {
     return i + n;
@@ -413,8 +413,8 @@ constexpr typename std::common_type<
     typename bit_iterator<T>::difference_type,
     typename bit_iterator<U>::difference_type
 >::type operator-(
-    bit_iterator<T> lhs,
-    bit_iterator<U> rhs
+    const bit_iterator<T>& lhs,
+    const bit_iterator<U>& rhs
 )
 {
     using lhs_utype = typename bit_iterator<T>::underlying_type;
