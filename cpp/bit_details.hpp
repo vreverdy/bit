@@ -395,7 +395,7 @@ template <class T, class>
 constexpr T _byteswap(T src)
 {
     static_assert(binary_digits<T>::value, "");
-    constexpr T digits = std::numeric_limits<T>::digits;
+    constexpr T digits = binary_digits<T>::value;
     if (digits == std::numeric_limits<std::uint16_t>::digits) {
         src = __builtin_bswap16(src);
     } else if (digits == std::numeric_limits<std::uint32_t>::digits) {
@@ -481,7 +481,7 @@ template <class T>
 constexpr T _shld(T dest, T src, T count)
 {
     static_assert(binary_digits<T>::value, "");
-    constexpr T digits = std::numeric_limits<T>::digits;
+    constexpr T digits = binary_digits<T>::value;
     return (dest << count) | (src >> (digits - count));
 }
 // -------------------------------------------------------------------------- //
@@ -494,7 +494,7 @@ template <class T>
 constexpr T _shrd(T dest, T src, T count)
 {
     static_assert(binary_digits<T>::value, "");
-    constexpr T digits = std::numeric_limits<T>::digits;
+    constexpr T digits = binary_digits<T>::value;
     return (dest >> count) | (src << (digits - count));
 }
 // -------------------------------------------------------------------------- //
