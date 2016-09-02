@@ -133,6 +133,18 @@ constexpr T _byteswap(T src, X...);
 // Bit swap
 template <class T>
 constexpr T _bitswap(T src);
+
+// Bit merge
+template <class T>
+constexpr T _bitmerge(T src0, T src1, T mask);
+
+// Double precision shift left
+template <class T>
+constexpr T _shld(T dest, T src, T count);
+
+// Double precision shift right
+template <class T>
+constexpr T _shrd(T dest, T src, T count);
 /* ************************************************************************** */
 
 
@@ -446,6 +458,44 @@ constexpr T _bitswap(T src)
         dest <<= i;
     }
     return dest;
+}
+// -------------------------------------------------------------------------- //
+
+
+
+// ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT MERGE ------------- //
+// Merges two sources of bits accordingly to a mask
+template <class T>
+constexpr T _bitmerge(T src0, T src1, T mask)
+{
+    static_assert(binary_digits<T>::value, "");
+    return src0 ^ ((src0 ^ src1) & mask);
+}
+// -------------------------------------------------------------------------- //
+
+
+
+// --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT LEFT ---- //
+// Left shifts dest by count bits, filling the lsbs of dest by the msbs of src
+template <class T>
+constexpr T _shld(T dest, T src, T count)
+{
+    static_assert(binary_digits<T>::value, "");
+    constexpr T digits = std::numeric_limits<T>::digits;
+    return (dest << count) | (src >> (digits - count));
+}
+// -------------------------------------------------------------------------- //
+
+
+
+// --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT RIGHT --- //
+// Right shifts dest by count bits, filling the msbs of dest by the lsbs of src
+template <class T>
+constexpr T _shrd(T dest, T src, T count)
+{
+    static_assert(binary_digits<T>::value, "");
+    constexpr T digits = std::numeric_limits<T>::digits;
+    return (dest >> count) | (src << (digits - count));
 }
 // -------------------------------------------------------------------------- //
 
