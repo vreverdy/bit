@@ -134,9 +134,9 @@ constexpr T _byteswap(T src, X...);
 template <class T>
 constexpr T _bitswap(T src);
 
-// Bit merge
+// Bit blend
 template <class T>
-constexpr T _bitmerge(T src0, T src1, T mask);
+constexpr T _bitblend(T src0, T src1, T mask);
 
 // Double precision shift left
 template <class T>
@@ -463,10 +463,10 @@ constexpr T _bitswap(T src)
 
 
 
-// ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT MERGE ------------- //
-// Merges two sources of bits accordingly to a mask
+// ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT BLEND ------------- //
+// Blends two sources of bits together accordingly to a mask
 template <class T>
-constexpr T _bitmerge(T src0, T src1, T mask)
+constexpr T _bitblend(T src0, T src1, T mask)
 {
     static_assert(binary_digits<T>::value, "");
     return src0 ^ ((src0 ^ src1) & mask);
