@@ -125,7 +125,7 @@ template <class T, class... X>
 constexpr T _pext(T src, T mask, X...);
 
 // Byte swap
-template <class T, class = decltype(__builtin_bswap64(T()))>
+template <class T, class T128 = decltype(__uint128_t(__builtin_bswap64(T())))>
 constexpr T _byteswap(T src);
 template <class T, class... X>
 constexpr T _byteswap(T src, X...);
@@ -133,6 +133,10 @@ constexpr T _byteswap(T src, X...);
 // Bit swap
 template <class T>
 constexpr T _bitswap(T src);
+template <class T, std::size_t N>
+constexpr T _bitswap(T src);
+template <class T, std::size_t N>
+constexpr T _bitswap();
 
 // Bit blend
 template <class T>
@@ -391,18 +395,26 @@ constexpr T _pext(T src, T mask, X...)
 
 // ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BYTE SWAP ------------- //
 // Reverses the order of the underlying bytes with compiler intrinsics
-template <class T, class>
+template <class T, class T128>
 constexpr T _byteswap(T src)
 {
     static_assert(binary_digits<T>::value, "");
-    constexpr T digits = binary_digits<T>::value;
-    if (digits == std::numeric_limits<std::uint16_t>::digits) {
+    using byte_t = unsigned char;
+    constexpr T digits = sizeof(T) * std::numeric_limits<byte_t>::digits;
+    std::uint64_t tmp64 = 0;
+    std::uint64_t* ptr64 = nullptr;
+    if (std::is_same<T, T128>::value) {
+        ptr64 = reinterpret_cast<std::uint64_t*>(&src);
+        tmp64 = __builtin_bswap64(*ptr64);
+        *ptr64 = __builtin_bswap64(*(ptr64 + 1));
+        *(ptr64 + 1) = tmp64;
+    } else if (digits == std::numeric_limits<std::uint16_t>::digits) {
         src = __builtin_bswap16(src);
     } else if (digits == std::numeric_limits<std::uint32_t>::digits) {
         src = __builtin_bswap32(src);
     } else if (digits == std::numeric_limits<std::uint64_t>::digits)  {
         src = __builtin_bswap64(src);
-    } else if (digits > std::numeric_limits<unsigned char>::digits) {
+    } else if (digits > std::numeric_limits<byte_t>::digits) {
         src = _byteswap(src, std::ignore);
     }
     return src;
@@ -413,9 +425,10 @@ template <class T, class... X>
 constexpr T _byteswap(T src, X...)
 {
     static_assert(binary_digits<T>::value, "");
+    using byte_t = unsigned char;
     constexpr T half = sizeof(T) / 2;
     constexpr T end = sizeof(T) - 1;
-    unsigned char* bytes = reinterpret_cast<unsigned char*>(&src);
+    unsigned char* bytes = reinterpret_cast<byte_t*>(&src);
     unsigned char byte = 0;
     for (T i = 0; i < half; ++i) {
         byte = bytes[i];
@@ -434,21 +447,24 @@ template <class T>
 constexpr T _bitswap(T src)
 {
     static_assert(binary_digits<T>::value, "");
+    using byte_t = unsigned char;
+    constexpr auto ignore = nullptr;
     constexpr T digits = binary_digits<T>::value;
     constexpr unsigned long long int first = 0x80200802ULL;
     constexpr unsigned long long int second = 0x0884422110ULL;
     constexpr unsigned long long int third = 0x0101010101ULL;
     constexpr unsigned long long int fourth = 32;
-    constexpr bool is_octet = std::numeric_limits<unsigned char>::digits == 8;
+    constexpr bool is_size1 = sizeof(T) == 1;
+    constexpr bool is_byte = digits == std::numeric_limits<byte_t>::digits;
+    constexpr bool is_octet = std::numeric_limits<byte_t>::digits == 8;
+    constexpr bool is_pow2 = _popcnt(digits, ignore) == 1;
     unsigned char* bytes = nullptr;
     T dest = src;
     T i = digits - 1;
-    if (false && is_octet) {
-        bytes = reinterpret_cast<unsigned char*>(&dest);
-        dest = _byteswap(dest);
-        for (i = 0; i < sizeof(T); ++i) {
-            bytes[i] = ((bytes[i] * first) & second) * third >> fourth;
-        }
+    if (is_size1 && is_byte && is_octet) {
+        dest = ((src * first) & second) * third >> fourth;
+    } else if (is_pow2) {
+        dest = _bitswap<T, digits>(src);
     } else {
         for (src >>= 1; src; src >>= 1) {   
             dest <<= 1;
@@ -458,6 +474,32 @@ constexpr T _bitswap(T src)
         dest <<= i;
     }
     return dest;
+}
+
+// Reverses the order of the bits: recursive metafunction
+template <class T, std::size_t N>
+constexpr T _bitswap(T src)
+{
+    static_assert(binary_digits<T>::value, "");
+    constexpr T count = N >> 1;
+    constexpr T mask = _bitswap<T, count>();
+    src = ((src >> count) & mask) | ((src << count) & ~mask);
+    return count > 1 ? _bitswap<T, count>(src) : src;
+}
+
+// Reverses the order of the bits: mask for the recursive metafunction
+template <class T, std::size_t N>
+constexpr T _bitswap()
+{
+    static_assert(binary_digits<T>::value, "");
+    constexpr T digits = binary_digits<T>::value;
+    T count = digits;
+    T mask = ~T();
+    while (count != N) {
+        count >>= 1;
+        mask ^= (mask << count);
+    }
+    return mask;
 }
 // -------------------------------------------------------------------------- //
 
