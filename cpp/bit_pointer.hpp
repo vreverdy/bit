@@ -284,7 +284,7 @@ constexpr bit_reference<UIntType> bit_pointer<UIntType>::operator[](
     constexpr difference_type digits = binary_digits<underlying_type>::value;
     const difference_type sum = _ref.position() + n;
     difference_type diff = sum / digits;
-    if (n < 0 && diff * digits != sum) {
+    if (sum < 0 && diff * digits != sum) {
         --diff;
     }
     return bit_reference<UIntType>(_ref._ptr + diff, sum - diff * digits);
@@ -363,7 +363,7 @@ constexpr bit_pointer<UIntType> bit_pointer<UIntType>::operator+(
     constexpr difference_type digits = binary_digits<underlying_type>::value;
     const difference_type sum = _ref.position() + n;
     difference_type diff = sum / digits;
-    if (n < 0 && diff * digits != sum) {
+    if (sum < 0 && diff * digits != sum) {
         --diff;
     }
     return bit_pointer(_ref._ptr + diff, sum - diff * digits);
@@ -378,7 +378,7 @@ constexpr bit_pointer<UIntType> bit_pointer<UIntType>::operator-(
     constexpr difference_type digits = binary_digits<underlying_type>::value;
     const difference_type sum = _ref.position() - n;
     difference_type diff = sum / digits;
-    if (n > 0 && diff * digits != sum) {
+    if (sum < 0 && diff * digits != sum) {
         --diff;
     }
     return bit_pointer(_ref._ptr + diff, sum - diff * digits);

@@ -89,7 +89,7 @@ count(
     
     // Negates when the number of zero bits is requested
     if (!static_cast<bool>(input)) {
-        result = (last - first) - result;
+        result = std::distance(first, last) - result;
     }
     
     // Finalization

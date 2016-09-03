@@ -250,7 +250,7 @@ bit_iterator<Iterator>::operator[](
     constexpr difference_type digits = binary_digits<underlying_type>::value;
     const difference_type sum = _position + n;
     difference_type diff = sum / digits;
-    if (n < 0 && diff * digits != sum) {
+    if (sum < 0 && diff * digits != sum) {
         --diff;
     }
     return reference(*(_current + diff), sum - diff * digits);
@@ -321,7 +321,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator+(
     constexpr difference_type digits = binary_digits<underlying_type>::value;
     const difference_type sum = _position + n;
     difference_type diff = sum / digits;
-    if (n < 0 && diff * digits != sum) {
+    if (sum < 0 && diff * digits != sum) {
         --diff;
     }
     return bit_iterator(_current + diff, sum - diff * digits);
@@ -336,7 +336,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator-(
     constexpr difference_type digits = binary_digits<underlying_type>::value;
     const difference_type sum = _position - n;
     difference_type diff = sum / digits;
-    if (n > 0 && diff * digits != sum) {
+    if (sum < 0 && diff * digits != sum) {
         --diff;
     }
     return bit_iterator(_current + diff, sum - diff * digits);
