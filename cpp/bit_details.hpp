@@ -87,6 +87,14 @@ struct _cv_iterator_traits
 
 
 
+/* ******************* IMPLEMENTATION DETAILS: UTILITIES ******************** */
+// Assertions
+template <class Iterator>
+constexpr bool _assert_range_viability(Iterator first, Iterator last);
+/* ************************************************************************** */
+
+
+
 /* ****************** IMPLEMENTATION DETAILS: INSTRUCTIONS ****************** */
 // Population count
 template <class T, class = decltype(__builtin_popcountll(T()))>
@@ -141,6 +149,8 @@ constexpr T _bitswap();
 // Bit blend
 template <class T>
 constexpr T _bitblend(T src0, T src1, T mask);
+template <class T>
+constexpr T _bitblend(T src0, T src1, T start, T len);
 
 // Double precision shift left
 template <class T>
@@ -150,6 +160,23 @@ constexpr T _shld(T dest, T src, T count);
 template <class T>
 constexpr T _shrd(T dest, T src, T count);
 /* ************************************************************************** */
+
+
+
+// ------------- IMPLEMENTATION DETAILS: UTILITIES: ASSERTIONS -------------- //
+// If the range allows multipass iteration, checks if last - first >= 0
+template <class Iterator>
+constexpr bool _assert_range_viability(Iterator first, Iterator last)
+{
+    using traits_t = std::iterator_traits<Iterator>;
+    using category_t =  typename traits_t::iterator_category;
+    using multipass_t = std::forward_iterator_tag;
+    constexpr bool is_multipass = std::is_base_of<multipass_t, Iterator>::value;
+    const bool is_viable = !is_multipass || std::distance(first, last) >= 0;
+    assert(is_viable);
+    return is_viable;
+}
+// -------------------------------------------------------------------------- //
 
 
 
@@ -278,7 +305,7 @@ constexpr T _tzcnt(T src, X...)
 
 
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT FIELD EXTRACTION ------- //
-// Extacts a field of contiguous bits with compiler intrinsics
+// Extacts to lsbs a field of contiguous bits with compiler intrinsics
 template <class T, class>
 constexpr T _bextr(T src, T start, T len)
 {
@@ -286,24 +313,24 @@ constexpr T _bextr(T src, T start, T len)
     constexpr T digits = binary_digits<T>::value;
     T dest = 0;
     if (digits <= std::numeric_limits<unsigned int>::digits) {
-        dest = start < digits ? __builtin_ia32_bextr_u32(src, start, len) : 0; 
+        dest = __builtin_ia32_bextr_u32(src, start, len) * (start < digits); 
     } else if (digits <= std::numeric_limits<unsigned long long int>::digits) {
-        dest = start < digits ? __builtin_ia32_bextr_u64(src, start, len) : 0;
+        dest = __builtin_ia32_bextr_u64(src, start, len) * (start < digits);
     } else {
-        dest = _bextr(src, std::ignore);
+        dest = _bextr(src, start, len, std::ignore);
     }
     return dest;
 }
 
-// Extacts a field of contiguous bits without compiler intrinsics
+// Extacts to lsbs a field of contiguous bits without compiler intrinsics
 template <class T, class... X>
 constexpr T _bextr(T src, T start, T len, X...)
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    constexpr T zero = 0;
     constexpr T one = 1;
-    return start < digits ? (src >> start) & ((one << len) - one) : zero;
+    const T mask = (one << len) * (len < digits) - one;
+    return (src >> start) & mask * (start < digits);
 }
 // -------------------------------------------------------------------------- //
 
@@ -506,12 +533,23 @@ constexpr T _bitswap()
 
 
 // ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT BLEND ------------- //
-// Blends two sources of bits together accordingly to a mask
+// Replaces len bits of src0 by the ones of src1 where the mask is true
 template <class T>
 constexpr T _bitblend(T src0, T src1, T mask)
 {
     static_assert(binary_digits<T>::value, "");
     return src0 ^ ((src0 ^ src1) & mask);
+}
+
+// Replaces len bits of src0 by the ones of src1 starting at start
+template <class T>
+constexpr T _bitblend(T src0, T src1, T start, T len)
+{
+    static_assert(binary_digits<T>::value, "");
+    constexpr T digits = binary_digits<T>::value;
+    constexpr T one = 1;
+    const T mask = ((one << len) * (len < digits) - one) << start;
+    return src0 ^ ((src0 ^ src1) & mask * (start < digits));
 }
 // -------------------------------------------------------------------------- //
 
@@ -524,7 +562,12 @@ constexpr T _shld(T dest, T src, T count)
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    return (dest << count) | (src >> (digits - count));
+    if (count < digits) {
+        dest = (dest << count) | (src >> (digits - count));
+    } else {
+        dest = (src << (count - digits)) * (count < digits + digits);
+    }
+    return dest;
 }
 // -------------------------------------------------------------------------- //
 
@@ -537,7 +580,12 @@ constexpr T _shrd(T dest, T src, T count)
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    return (dest >> count) | (src << (digits - count));
+    if (count < digits) {
+        dest = (dest >> count) | (src << (digits - count));
+    } else {
+        dest = (src >> (count - digits)) * (count < digits + digits);
+    }
+    return dest;
 }
 // -------------------------------------------------------------------------- //
 

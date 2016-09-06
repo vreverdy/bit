@@ -253,7 +253,7 @@ bit_iterator<Iterator>::operator[](
     if (sum < 0 && diff * digits != sum) {
         --diff;
     }
-    return reference(*(_current + diff), sum - diff * digits);
+    return reference(*std::next(_current, diff), sum - diff * digits);
 }
 // -------------------------------------------------------------------------- //
 
@@ -324,7 +324,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator+(
     if (sum < 0 && diff * digits != sum) {
         --diff;
     }
-    return bit_iterator(_current + diff, sum - diff * digits);
+    return bit_iterator(std::next(_current, diff), sum - diff * digits);
 }
 
 // Looks backward several bits and gets an iterator at this position
@@ -339,7 +339,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator-(
     if (sum < 0 && diff * digits != sum) {
         --diff;
     }
-    return bit_iterator(_current + diff, sum - diff * digits);
+    return bit_iterator(std::next(_current, diff), sum - diff * digits);
 }
 
 // Increments the iterator by several bits and returns it

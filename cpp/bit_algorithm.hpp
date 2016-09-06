@@ -37,12 +37,12 @@ static constexpr bit_value one_bit(1U);
 
 /* ************************** STANDARD ALGORITHMS *************************** */
 // Non-modifying sequence operations
-template <class InputIt, class T> 
+template <class InputIt> 
 typename bit_iterator<InputIt>::difference_type
 count(
     bit_iterator<InputIt> first, 
     bit_iterator<InputIt> last, 
-    const T& value
+    bit_value value
 );
 /* ************************************************************************** */
 
@@ -50,19 +50,21 @@ count(
 
 // ------------------- NON-MODIFYING SEQUENCE OPERATIONS -------------------- //
 // Counts the number of bits equal to the provided bit value
-template <class InputIt, class T> 
+template <class InputIt> 
 typename bit_iterator<InputIt>::difference_type
 count(
     bit_iterator<InputIt> first, 
     bit_iterator<InputIt> last, 
-    const T& value
+    bit_value value
 )
 {
+    // Assertions
+    _assert_range_viability(first, last);
+    
     // Initialization
     using underlying_type = typename bit_iterator<InputIt>::underlying_type;
     using difference_type = typename bit_iterator<InputIt>::difference_type;
     constexpr difference_type digits = binary_digits<underlying_type>::value;
-    const bit_value input = value;
     difference_type result = 0;
     auto it = first.base();
     
@@ -80,15 +82,15 @@ count(
         }
     // Computation when bits belong to the same underlying value
     } else {
-        result = _popcnt(_bextr(
+        result = _popcnt(_bextr<underlying_type>(
             *first.base(), 
-            static_cast<underlying_type>(first.position()), 
-            static_cast<underlying_type>(last.position() - first.position())
+            first.position(), 
+            last.position() - first.position()
         ));
     }
     
     // Negates when the number of zero bits is requested
-    if (!static_cast<bool>(input)) {
+    if (!static_cast<bool>(value)) {
         result = std::distance(first, last) - result;
     }
     
