@@ -3,7 +3,7 @@
 // Name:            bit_value.hpp
 // Description:     A class representing an independent, non-referenced bit
 // Creator:         Vincent Reverdy
-// Contributor(s):  Vincent Reverdy [2015-2016]
+// Contributor(s):  Vincent Reverdy [2015-2017]
 // License:         BSD 3-Clause License
 // ========================================================================== //
 #ifndef _BIT_VALUE_HPP_INCLUDED

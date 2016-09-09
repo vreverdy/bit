@@ -3,7 +3,7 @@
 // Name:            bit_iterator.hpp
 // Description:     A class representing an iterator on bit sequences
 // Creator:         Vincent Reverdy
-// Contributor(s):  Vincent Reverdy [2015-2016]
+// Contributor(s):  Vincent Reverdy [2015-2017]
 // License:         BSD 3-Clause License
 // ========================================================================== //
 #ifndef _BIT_ITERATOR_HPP_INCLUDED

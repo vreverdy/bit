@@ -3,7 +3,7 @@
 // Name:            bit_details.hpp
 // Description:     Provides common implementation details and helper classes
 // Creator:         Vincent Reverdy
-// Contributor(s):  Vincent Reverdy [2015-2016]
+// Contributor(s):  Vincent Reverdy [2015-2017]
 // License:         BSD 3-Clause License
 // ========================================================================== //
 #ifndef _BIT_DETAILS_HPP_INCLUDED

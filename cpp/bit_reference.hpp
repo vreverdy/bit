@@ -3,7 +3,7 @@
 // Name:            bit_reference.hpp
 // Description:     A class representing a reference to a bit
 // Creator:         Vincent Reverdy
-// Contributor(s):  Vincent Reverdy [2015-2016]
+// Contributor(s):  Vincent Reverdy [2015-2017]
 // License:         BSD 3-Clause License
 // ========================================================================== //
 #ifndef _BIT_REFERENCE_HPP_INCLUDED
