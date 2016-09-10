@@ -170,8 +170,8 @@ constexpr bool _assert_range_viability(Iterator first, Iterator last)
 {
     using traits_t = std::iterator_traits<Iterator>;
     using category_t =  typename traits_t::iterator_category;
-    using multipass_t = std::forward_iterator_tag;
-    constexpr bool is_multipass = std::is_base_of<multipass_t, Iterator>::value;
+    using multi_t = std::forward_iterator_tag;
+    constexpr bool is_multipass = std::is_base_of<multi_t, category_t>::value;
     const bool is_viable = !is_multipass || std::distance(first, last) >= 0;
     assert(is_viable);
     return is_viable;
@@ -485,7 +485,6 @@ constexpr T _bitswap(T src)
     constexpr bool is_byte = digits == std::numeric_limits<byte_t>::digits;
     constexpr bool is_octet = std::numeric_limits<byte_t>::digits == 8;
     constexpr bool is_pow2 = _popcnt(digits, ignore) == 1;
-    unsigned char* bytes = nullptr;
     T dest = src;
     T i = digits - 1;
     if (is_size1 && is_byte && is_octet) {
