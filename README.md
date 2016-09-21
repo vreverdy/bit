@@ -12,5 +12,5 @@ The Bit Library (TBL) is a multi-language library providing efficient bit abstra
   * ``cpp/bit_iterator.hpp``: A class representing an iterator on bit sequences
   * ``cpp/bit_algorithm.hpp``: Optimized versions of algorithms for bit manipulation
   * ``cpp/bit.hpp``: Includes the whole C++ bit library
-  * ``cpp/bit.cpp``: Example use of the C++ bit library
+  * ``cpp/bit.cpp``: Example use of the C++ bit library (old version, needs to be updated)
 * ``wg21``: ISO WG21 C++ proposal for standardization
