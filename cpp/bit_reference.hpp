@@ -53,7 +53,6 @@ class bit_reference
     template <class T> 
     bit_reference& operator=(const bit_reference<T>& other) noexcept;
     bit_reference& operator=(bit_value val) noexcept;
-    bit_reference& operator=(underlying_type val) noexcept;
     
     // Conversion
     public:
@@ -86,7 +85,6 @@ class bit_reference
     private:
     bit_reference() noexcept = default;
     explicit constexpr bit_reference(std::nullptr_t) noexcept;
-    constexpr bit_reference(std::nullptr_t, size_type);
     explicit constexpr bit_reference(underlying_type* ptr) noexcept;
     constexpr bit_reference(underlying_type* ptr, size_type pos);
 
@@ -129,17 +127,6 @@ template <class T, class U = bit_value>
 bit_value exchange(
     bit_reference<T> x,
     U&& val
-);
-
-// Make functions
-template <class T>
-constexpr bit_reference<T> make_bit_reference(
-  T& ref
-) noexcept;
-template <class T>
-constexpr bit_reference<T> make_bit_reference(
-  T& ref,
-  typename bit_reference<T>::size_type pos
 );
 /* ************************************************************************** */
 
@@ -210,16 +197,6 @@ bit_reference<UIntType>& bit_reference<UIntType>::operator=(
 ) noexcept
 {
     val ? set() : reset();
-    return *this;
-}
-
-// Assigns the aligned bit of a value to the bit reference
-template <class UIntType> 
-bit_reference<UIntType>& bit_reference<UIntType>::operator=(
-    underlying_type val
-) noexcept
-{
-    val & 1 ? set() : reset();
     return *this;
 }
 // -------------------------------------------------------------------------- //
@@ -429,46 +406,12 @@ bit_value exchange(
 
 
 
-// --------------------- BIT REFERENCE: MAKE FUNCTIONS ---------------------- //
-// Constructs an aligned bit reference
-template <class T>
-constexpr bit_reference<T> make_bit_reference(
-  T& ref
-) noexcept
-{
-    return bit_reference<T>(ref);
-}
-
-// Constructs an unaligned bit reference
-template <class T>
-constexpr bit_reference<T> make_bit_reference(
-  T& ref,
-  typename bit_reference<T>::size_type pos
-)
-{
-    return bit_reference<T>(ref, pos);
-}
-// -------------------------------------------------------------------------- //
-
-
-
 // -------- BIT REFERENCE: IMPLEMENTATION DETAILS: FUNCTION MEMBERS --------- //
-// Privately explicitly constructs an aligned bit reference from a nullptr
+// Privately explicitly constructs a bit reference from a nullptr
 template <class UIntType>
 constexpr bit_reference<UIntType>::bit_reference(
     std::nullptr_t
 ) noexcept
-: _ptr(nullptr)
-, _mask()
-{
-}
-
-// Privately explicitly constructs an unaligned bit reference from a nullptr
-template <class UIntType>
-constexpr bit_reference<UIntType>::bit_reference(
-    std::nullptr_t, 
-    size_type
-)
 : _ptr(nullptr)
 , _mask()
 {

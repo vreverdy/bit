@@ -45,8 +45,6 @@ class bit_value
     public:
     template <class T> 
     bit_value& operator=(bit_reference<T> val) noexcept;
-    template <class UIntType> 
-    bit_value& operator=(UIntType val) noexcept;
 
     // Conversion
     public:
@@ -103,17 +101,6 @@ class bit_value
         bit_value& x
     );
 };
-
-// Make functions
-template <class T>
-constexpr bit_value make_bit_value(
-  T val
-) noexcept;
-template <class T>
-constexpr bit_value make_bit_value(
-  T val,
-  typename bit_value::size_type pos
-);
 /* ************************************************************************** */
 
 
@@ -160,17 +147,6 @@ bit_value& bit_value::operator=(
 ) noexcept
 {
     _value = static_cast<bool>(val);
-    return *this;
-}
-
-// Assigns the aligned bit of a value to the bit value
-template <class UIntType> 
-bit_value& bit_value::operator=(
-    UIntType val
-) noexcept
-{
-    static_assert(binary_digits<UIntType>::value, "");
-    _value = val & 1;
     return *this;
 }
 // -------------------------------------------------------------------------- //
@@ -303,29 +279,6 @@ std::basic_istream<CharT, Traits>& operator>>(
 )
 {
     return is >> x._value;
-}
-// -------------------------------------------------------------------------- //
-
-
-
-// ----------------------- BIT VALUE: MAKE FUNCTIONS ------------------------ //
-// Constructs an aligned bit value
-template <class T>
-constexpr bit_value make_bit_value(
-  T val
-) noexcept
-{
-    return bit_value(val);
-}
-
-// Constructs an unaligned bit value
-template <class T>
-constexpr bit_value make_bit_value(
-  T val,
-  typename bit_value::size_type pos
-)
-{
-    return bit_value(val, pos);
 }
 // -------------------------------------------------------------------------- //
 

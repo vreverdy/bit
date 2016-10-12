@@ -39,7 +39,7 @@ class bit_iterator
     using underlying_type = typename _traits_t::value_type;
     using iterator_category = typename _traits_t::iterator_category;
     using value_type = bit_value;
-    using difference_type = std::intmax_t;
+    using difference_type = std::ptrdiff_t;
     using pointer = bit_pointer<underlying_type>;
     using reference = bit_reference<underlying_type>;
     using size_type = std::size_t;
@@ -56,7 +56,6 @@ class bit_iterator
     public:
     template <class T>
     bit_iterator& operator=(const bit_iterator<T>& other);
-    bit_iterator& operator=(iterator_type i);
 
     // Access
     public:
@@ -134,17 +133,6 @@ class bit_iterator
         const bit_iterator<U>& rhs
     );
 };
-
-// Make functions
-template <class T>
-constexpr bit_iterator<T> make_bit_iterator(
-    T i
-);
-template <class T>
-constexpr bit_iterator<T> make_bit_iterator(
-  T i,
-  typename bit_iterator<T>::size_type pos
-);
 /* ************************************************************************** */
 
 
@@ -204,17 +192,6 @@ bit_iterator<Iterator>& bit_iterator<Iterator>::operator=(
 {
     _current = other._current;
     _position = other._position;
-    return *this;
-}
-
-// Assigns an iterator to the aligned bit of a value to the bit iterator
-template <class Iterator>
-bit_iterator<Iterator>& bit_iterator<Iterator>::operator=(
-    iterator_type i
-)
-{
-    _current = i;
-    _position = 0;
     return *this;
 }
 // -------------------------------------------------------------------------- //
@@ -496,29 +473,6 @@ constexpr bool operator>=(
 {
     return lhs._current > rhs._current 
         || (lhs._current == rhs._current && lhs._position >= rhs._position);
-}
-// -------------------------------------------------------------------------- //
-
-
-
-// ---------------------- BIT ITERATOR: MAKE FUNCTIONS ---------------------- //
-// Constructs an aligned bit iterator
-template <class T>
-constexpr bit_iterator<T> make_bit_iterator(
-  T i
-)
-{
-    return bit_iterator<T>(i);
-}
-
-// Constructs an unaligned bit iterator
-template <class T>
-constexpr bit_iterator<T> make_bit_iterator(
-  T i,
-  typename bit_iterator<T>::size_type pos
-)
-{
-    return bit_iterator<T>(i, pos);
 }
 // -------------------------------------------------------------------------- //
 

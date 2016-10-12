@@ -38,15 +38,14 @@ class bit_pointer
     public:
     using underlying_type = UIntType;
     using size_type = std::size_t;
-    using difference_type = std::intmax_t;
+    using difference_type = std::ptrdiff_t;
 
     // Lifecycle
     public:
     bit_pointer() noexcept = default;
     template <class T> 
     constexpr bit_pointer(const bit_pointer<T>& other) noexcept;
-    explicit constexpr bit_pointer(std::nullptr_t) noexcept;
-    constexpr bit_pointer(std::nullptr_t, size_type);
+    constexpr bit_pointer(std::nullptr_t) noexcept;
     explicit constexpr bit_pointer(underlying_type* ptr) noexcept;
     constexpr bit_pointer(underlying_type* ptr, size_type pos);
     
@@ -56,7 +55,6 @@ class bit_pointer
     bit_pointer& operator=(const bit_pointer& other) noexcept;
     template <class T> 
     bit_pointer& operator=(const bit_pointer<T>& other) noexcept;
-    bit_pointer& operator=(underlying_type* ptr) noexcept;
     
     // Conversion
     public:
@@ -130,17 +128,6 @@ class bit_pointer
         bit_pointer<U> rhs
     ) noexcept;
 };
-
-// Make functions
-template <class T>
-constexpr bit_pointer<T> make_bit_pointer(
-  T* ptr
-) noexcept;
-template <class T>
-constexpr bit_pointer<T> make_bit_pointer(
-  T* ptr,
-  typename bit_pointer<T>::size_type pos
-);
 /* ************************************************************************** */
 
 
@@ -156,22 +143,12 @@ constexpr bit_pointer<UIntType>::bit_pointer(
 {
 }
 
-// Explicitly constructs an aligned bit pointer from a null pointer
+// Explicitly constructs a bit pointer from a null pointer
 template <class UIntType>
 constexpr bit_pointer<UIntType>::bit_pointer(
     std::nullptr_t
 ) noexcept
 : _ref(nullptr)
-{
-}
-
-// Explicitly constructs an unaligned bit pointer from a null pointer
-template <class UIntType>
-constexpr bit_pointer<UIntType>::bit_pointer(
-    std::nullptr_t, 
-    size_type
-)
-: _ref(nullptr, 0)
 {
 }
 
@@ -229,17 +206,6 @@ bit_pointer<UIntType>& bit_pointer<UIntType>::operator=(
 {
     _ref._ptr = other._ptr;
     _ref._mask = other._mask;
-    return *this;
-}
-
-// Assigns a pointer to the aligned bit of a value to the bit pointer
-template <class UIntType> 
-bit_pointer<UIntType>& bit_pointer<UIntType>::operator=(
-    underlying_type* ptr
-) noexcept
-{
-    _ref._ptr = ptr;
-    _ref._mask = 1;
     return *this;
 }
 // -------------------------------------------------------------------------- //
@@ -511,29 +477,6 @@ constexpr bool operator>=(
     return lhs._ref.address() > rhs._ref.address() 
         || (lhs._ref.address() == rhs._ref.address()
             && lhs._ref.position() >= rhs._ref.position());
-}
-// -------------------------------------------------------------------------- //
-
-
-
-// ---------------------- BIT POINTER: MAKE FUNCTIONS ----------------------- //
-// Constructs an aligned bit pointer
-template <class T>
-constexpr bit_pointer<T> make_bit_pointer(
-  T* ptr
-) noexcept
-{
-    return bit_pointer<T>(ptr);
-}
-
-// Constructs an unaligned bit pointer
-template <class T>
-constexpr bit_pointer<T> make_bit_pointer(
-  T* ptr,
-  typename bit_pointer<T>::size_type pos
-)
-{
-    return bit_pointer<T>(ptr, pos);
 }
 // -------------------------------------------------------------------------- //
 

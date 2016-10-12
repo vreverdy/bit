@@ -1,129 +1,159 @@
+// ================================== BIT =================================== //
+// Project:         The C++ Bit Library
+// Name:            bit.hpp
+// Description:     Illustrates the use of the bit library
+// Creator:         Vincent Reverdy
+// Contributor(s):  Vincent Reverdy [2015-2017]
+// License:         BSD 3-Clause License
+// ========================================================================== //
 // Compilation: 
 // g++ -std=c++14 -Wall -Wextra -pedantic -g -O3 bit.cpp -o bit -mpopcnt
 // Execution
 // ./bit 64000000
+// ========================================================================== //
 
-// Preprocessor
+
+
+// ================================ PREAMBLE ================================ //
+// C++ standard library
 #include <chrono>
+#include <cstdio>
+#include <limits>
 #include <random>
-#include <cstdint>
 #include <iostream>
+// Project sources
 #include "bit.hpp"
+// Third-party libraries
+// Miscellaneous
 using namespace bit;
+// ========================================================================== //
 
-// Makes a random vector of the provided size
+
+
+// ================================== BODY ================================== //
+// Display algorithm
+template <class O, class Iterator> 
+void display(O&& os, bit_iterator<Iterator> first, bit_iterator<Iterator> last)
+{
+    auto mem = first;
+    for (auto it = first; it != last; ++it) {
+        if (it.base() != mem.base()) {
+            os << " ";
+        }
+        std::forward<O>(os) << *it;
+        mem = it;
+    }
+    std::forward<O>(os) << std::endl;
+}
+
+// Make random vector
 template <class T>
-std::vector<T> make_random_vector(std::size_t size, const T& seed = T())
+std::vector<T> make_random_vector(
+    std::size_t size, 
+    T min = std::numeric_limits<T>::min(), 
+    T max = std::numeric_limits<T>::max(), 
+    const T& seed = T()
+)
 {
     std::vector<T> v(size);
     std::random_device device;
     std::mt19937 engine(seed == T() ? device() : seed);
-    std::uniform_int_distribution<T> distribution;
+    std::uniform_int_distribution<std::uintmax_t> distribution(min, max);
     for (std::size_t i = 0; i < size; ++i) {
         v[i] = distribution(engine);
     }
     return v;
 }
 
-// Makes a boolean vector from a vector of integers
-template <class T>
-std::vector<bool> make_bool_vector(const std::vector<T>& v)
-{
-    constexpr std::size_t digits = binary_digits<T>::value;
-    const std::size_t n = v.size();
-    const std::size_t bn = n * digits;
-    std::vector<bool> bv(bn);
-    std::size_t bi = 0;
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = 0; j < digits; ++j) {
-            bv[bi++] = bool(make_bit_reference(v[i], j));
-        }
-    }
-    return bv;
-}
-
-// Benchmark vector bool
-double benchmark_vector_bool(std::vector<bool>& v)
+// Benchmark the function on the vector
+template <class T, class F, class R>
+double benchmark(std::vector<T> v, F&& f, R&& result)
 {
     typename std::chrono::high_resolution_clock::time_point tbegin;
     typename std::chrono::high_resolution_clock::time_point tend;
     std::chrono::duration<double> duration;
     volatile std::uintmax_t tmp = 0;
-    auto first = std::begin(v);
-    auto last = std::end(v);
     tbegin = std::chrono::high_resolution_clock::now();
-    tmp = ::std::count(first, last, 0);
+    std::forward<F>(f)(std::begin(v), std::end(v));
     tend = std::chrono::high_resolution_clock::now();
+    result = std::accumulate(std::begin(v), std::end(v), T{}); 
+    tmp = std::forward<R>(result) + tmp;
     duration = tend - tbegin;
-    return duration.count() + tmp / std::numeric_limits<double>::max();
-}
-
-// Benchmark bit iterator loop
-template <class T>
-double benchmark_bit_iterator_loop(std::vector<T>& v)
-{
-    typename std::chrono::high_resolution_clock::time_point tbegin;
-    typename std::chrono::high_resolution_clock::time_point tend;
-    std::chrono::duration<double> duration;
-    std::uintmax_t result = 0;
-    volatile std::uintmax_t tmp = 0;
-    tbegin = std::chrono::high_resolution_clock::now();
-    for (auto&& element: v) {
-        result += ::bit::count(
-            make_bit_iterator(&element, 0), 
-            make_bit_iterator(&element + 1, 0), 
-            zero_bit
-        );
-    }
-    tmp = result;
-    tend = std::chrono::high_resolution_clock::now();
-    duration = tend - tbegin;
-    return duration.count() + tmp / std::numeric_limits<double>::max();
-}
-
-// Benchmark bit iterator
-template <class T>
-double benchmark_bit_iterator(std::vector<T>& v)
-{
-    typename std::chrono::high_resolution_clock::time_point tbegin;
-    typename std::chrono::high_resolution_clock::time_point tend;
-    std::chrono::duration<double> duration;
-    volatile std::uintmax_t tmp = 0;
-    auto first = make_bit_iterator(std::begin(v), 0);
-    auto last = make_bit_iterator(std::end(v), 0);
-    tbegin = std::chrono::high_resolution_clock::now();
-    tmp = ::bit::count(first, last, zero_bit);
-    tend = std::chrono::high_resolution_clock::now();
-    duration = tend - tbegin;
-    return duration.count() + tmp / std::numeric_limits<double>::max();
+    return duration.count();
 }
 
 // Main function
 int main(int argc, char* argv[])
 {
+    // Initialization
     using uint_t = unsigned long long int;
-    constexpr std::size_t digits = std::numeric_limits<uint_t>::digits;
-    const std::size_t n = argc > 1 ? std::stoull(argv[1]) / digits : (1 << 22);
-    const std::string digitsstr = std::to_string(digits);
-    const std::string exceptstr = "the number of bits should be a multiple of";
-    std::vector<uint_t> v = make_random_vector<uint_t>(n);
-    std::vector<bool> bv = make_bool_vector(v);
-    double vector_bool_duration = 0;
-    double bit_iterator_loop_duration = 0;
-    double bit_iterator_duration = 0;
-    if (v.size() * digits != std::stoull(argv[1])) {
-        throw std::invalid_argument(exceptstr + " " + digitsstr);
-    }
-    vector_bool_duration = benchmark_vector_bool(bv);
-    bit_iterator_loop_duration = benchmark_bit_iterator_loop(v);
-    bit_iterator_duration = benchmark_bit_iterator(v);
-    std::cout<<"Counting bits set to 0 within "<<n * digits<<" bits"<<"\n";
-    std::cout<<"Time: boolean vector = "<<vector_bool_duration<<"\n";
-    std::cout<<"Time: bit iterator loop = "<<bit_iterator_loop_duration<<"\n";
-    std::cout<<"Time: bit iterator = "<<bit_iterator_duration<<"\n";
-    std::cout<<"Speedup: boolean vector / bit iterator = ";
-    std::cout<<(vector_bool_duration/bit_iterator_duration)<<std::endl;
-    std::cout<<"Overhead: bit iterator loop / bit iterator = ";
-    std::cout<<(bit_iterator_loop_duration/bit_iterator_duration)<<std::endl;
-    return 0;
+    constexpr std::size_t byte = std::numeric_limits<unsigned char>::digits;
+    constexpr std::size_t digits = sizeof(uint_t) * byte;
+    const std::size_t n = argc > 1 ? std::stoull(argv[1]) : (1 << 22);
+    auto v = make_random_vector<uint_t>(n);
+    auto vb = make_random_vector<bool>(n * digits, 0, 1);
+    std::uintmax_t k = 0;
+    
+    // Functions
+    auto f0 = [=](auto first, auto last){
+        auto bfirst = bit_iterator<decltype(first)>(first);
+        auto blast = bit_iterator<decltype(last)>(last);
+        reverse(bfirst, blast);
+    };
+    auto f1 = [=](auto first, auto last){
+        for (auto it = first; it != last; ++it) {
+            auto bfirst = bit_iterator<decltype(it)>(it);
+            auto blast = bit_iterator<decltype(it)>(it + 1);
+            reverse(bfirst, blast);
+        }
+    };
+    auto f2 = [=](auto first, auto last){
+        for (auto it = first; it != last; ++it) {
+            *it = _bitswap(*it);
+        }
+    };
+    auto f3 = [=](auto first, auto last){
+        for (auto it = first; it != last; ++it) {
+            auto bfirst = bit_iterator<decltype(it)>(it) + 7;
+            auto blast = bit_iterator<decltype(it)>(it + 1);
+            reverse(bfirst, blast);
+        }
+    };
+    auto f4 = [=](auto first, auto last){
+        for (auto it = first; it != last; ++it) {
+            auto bfirst = bit_iterator<decltype(it)>(it) + 7;
+            auto blast = bit_iterator<decltype(it)>(it + 1) - 13;
+            reverse(bfirst, blast);
+        }
+    };
+    auto f5 = [=](auto first, auto last){
+        for (auto it = first; it != last; ++it) {
+            auto bfirst = bit_iterator<decltype(it)>(it);
+            auto blast = bit_iterator<decltype(it)>(it + 1) - 13;
+            reverse(bfirst, blast);
+        }
+    };
+    auto f6 = [=](auto first, auto last){
+        std::reverse(first, last);
+    };
+    
+    // Benchmark
+    std::cout<<"f0 = "<<benchmark(v, f0, k = 0)<<" ";
+    std::cout<<k<<std::endl;
+    std::cout<<"f1 = "<<benchmark(v, f1, k = 0)<<" ";
+    std::cout<<k<<std::endl;
+    std::cout<<"f2 = "<<benchmark(v, f2, k = 0)<<" ";
+    std::cout<<k<<std::endl;
+    std::cout<<"f3 = "<<benchmark(v, f3, k = 0)<<" ";
+    std::cout<<k<<std::endl;
+    std::cout<<"f4 = "<<benchmark(v, f4, k = 0)<<" ";
+    std::cout<<k<<std::endl;
+    std::cout<<"f5 = "<<benchmark(v, f5, k = 0)<<" ";
+    std::cout<<k<<std::endl;
+    std::cout<<"f6 = "<<benchmark(vb, f6, k = 0)<<" ";
+    std::cout<<k<<std::endl;
+    
+    // Finalization
+    return static_cast<int>(k);
 }
+// ========================================================================== //
