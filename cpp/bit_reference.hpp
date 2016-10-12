@@ -53,6 +53,8 @@ class bit_reference
     template <class T> 
     bit_reference& operator=(const bit_reference<T>& other) noexcept;
     bit_reference& operator=(bit_value val) noexcept;
+    void assign(underlying_type val) noexcept;
+    void assign(underlying_type val, size_type pos);
     
     // Conversion
     public:
@@ -198,6 +200,26 @@ bit_reference<UIntType>& bit_reference<UIntType>::operator=(
 {
     val ? set() : reset();
     return *this;
+}
+
+// Assigns the aligned bit of a value to the bit reference
+template <class UIntType>
+void bit_reference<UIntType>::assign(
+    underlying_type val
+) noexcept
+{
+    val & 1 ? set() : reset();
+}
+
+// Assigns an unaligned bit of a value to the bit reference
+template <class UIntType>
+void bit_reference<UIntType>::assign(
+    underlying_type val, 
+    size_type pos
+)
+{
+    assert(pos < binary_digits<underlying_type>::value);
+    val >> pos & 1 ? set() : reset();
 }
 // -------------------------------------------------------------------------- //
 

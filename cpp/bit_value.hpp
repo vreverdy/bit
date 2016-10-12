@@ -35,7 +35,7 @@ class bit_value
     public:
     bit_value() noexcept = default;
     template <class T> 
-    constexpr bit_value(bit_reference<T> val) noexcept;
+    constexpr bit_value(bit_reference<T> ref) noexcept;
     template <class UIntType> 
     explicit constexpr bit_value(UIntType val) noexcept;
     template <class UIntType> 
@@ -44,7 +44,7 @@ class bit_value
     // Assignment
     public:
     template <class T> 
-    bit_value& operator=(bit_reference<T> val) noexcept;
+    bit_value& operator=(bit_reference<T> ref) noexcept;
 
     // Conversion
     public:
@@ -109,9 +109,9 @@ class bit_value
 // Implicitly constructs a bit value from a bit reference
 template <class T> 
 constexpr bit_value::bit_value(
-    bit_reference<T> val
+    bit_reference<T> ref
 ) noexcept
-: _value(static_cast<bool>(val))
+: _value(static_cast<bool>(ref))
 {
 }
     
@@ -143,10 +143,10 @@ constexpr bit_value::bit_value(
 // Assigns a bit reference to the bit value
 template <class T> 
 bit_value& bit_value::operator=(
-    bit_reference<T> val
+    bit_reference<T> ref
 ) noexcept
 {
-    _value = static_cast<bool>(val);
+    _value = static_cast<bool>(ref);
     return *this;
 }
 // -------------------------------------------------------------------------- //
