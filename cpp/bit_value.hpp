@@ -27,6 +27,9 @@ namespace bit {
 // Bit value class definition
 class bit_value
 {
+    // Friendship
+    template <class> friend class bit_reference;
+    
     // Types
     public:
     using size_type = std::size_t;
@@ -46,9 +49,21 @@ class bit_value
     template <class T> 
     bit_value& operator=(bit_reference<T> ref) noexcept;
 
+    // Bitwise assignment operators
+    public:
+    bit_value& operator&=(bit_value other) noexcept;
+    bit_value& operator|=(bit_value other) noexcept;
+    bit_value& operator^=(bit_value other) noexcept;
+
     // Conversion
     public:
     explicit constexpr operator bool() const noexcept;
+    
+    // Swap members
+    public:
+    void swap(bit_value& other);
+    template <class T> 
+    void swap(bit_reference<T> other);
 
     // Bit manipulation
     public:
@@ -60,6 +75,21 @@ class bit_value
     // Implementation details: data members
     private:
     bool _value;
+    
+    // Bitwise operators
+    public:
+    friend constexpr bit_value operator&(
+        bit_value lhs, 
+        bit_value rhs
+    ) noexcept;
+    friend constexpr bit_value operator|(
+        bit_value lhs, 
+        bit_value rhs
+    ) noexcept;
+    friend constexpr bit_value operator^(
+        bit_value lhs, 
+        bit_value rhs
+    ) noexcept;
 
     // Comparison operators
     public:
@@ -153,12 +183,67 @@ bit_value& bit_value::operator=(
 
 
 
+// ---------------- BIT VALUE: BITWISE ASSIGNMENT OPERATORS ----------------- //
+// Assigns the value of the bit through a bitwise and operation
+bit_value& bit_value::operator&=(
+    bit_value other
+) noexcept
+{
+    _value &= other._value;
+    return *this;
+}
+
+// Assigns the value of the bit through a bitwise or operation
+bit_value& bit_value::operator|=(
+    bit_value other
+) noexcept
+{
+    _value |= other._value;
+    return *this;
+}
+
+// Assigns the value of the bit through a bitwise xor operation
+bit_value& bit_value::operator^=(
+    bit_value other
+) noexcept
+{
+    _value ^= other._value;
+    return *this;
+}
+// -------------------------------------------------------------------------- //
+
+
+
 // ------------------------- BIT VALUE: CONVERSION -------------------------- //
 // Explicitly converts the bit value to a boolean value
 constexpr bit_value::operator bool(
 ) const noexcept
 {
     return _value;
+}
+// -------------------------------------------------------------------------- //
+
+
+
+// ------------------------ BIT VALUE: SWAP MEMBERS ------------------------- //
+// Swaps the bit value with another bit value
+void bit_value::swap(
+    bit_value& other
+)
+{
+    std::swap(*this, other);
+}
+
+// Swaps the bit value with the value of a bit reference
+template <class T>
+void bit_value::swap(
+    bit_reference<T> other
+)
+{
+    if (other != _value) {
+        flip();
+        other.flip();
+    }
 }
 // -------------------------------------------------------------------------- //
 
@@ -192,6 +277,40 @@ void bit_value::flip(
 ) noexcept
 {
     _value = !_value;
+}
+// -------------------------------------------------------------------------- //
+
+
+
+// ---------------------- BIT VALUE: BITWISE OPERATORS ---------------------- //
+// Returns the result of a bitwise and between the right and left hand sides
+constexpr bit_value operator&(
+    bit_value lhs, 
+    bit_value rhs
+) noexcept
+{
+    using type = unsigned int;
+    return bit_value(static_cast<type>(lhs._value & rhs._value));
+}
+
+// Returns the result of a bitwise or between the right and left hand sides
+constexpr bit_value operator|(
+    bit_value lhs, 
+    bit_value rhs
+) noexcept
+{
+    using type = unsigned int;
+    return bit_value(static_cast<type>(lhs._value | rhs._value));
+}
+
+// Returns the result of a bitwise xor between the right and left hand sides
+constexpr bit_value operator^(
+    bit_value lhs, 
+    bit_value rhs
+) noexcept
+{
+    using type = unsigned int;
+    return bit_value(static_cast<type>(lhs._value ^ rhs._value));
 }
 // -------------------------------------------------------------------------- //
 

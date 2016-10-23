@@ -55,6 +55,12 @@ class bit_reference
     bit_reference& operator=(bit_value val) noexcept;
     void assign(underlying_type val) noexcept;
     void assign(underlying_type val, size_type pos);
+
+    // Bitwise assignment operators
+    public:
+    bit_reference& operator&=(bit_value other) noexcept;
+    bit_reference& operator|=(bit_value other) noexcept;
+    bit_reference& operator^=(bit_value other) noexcept;
     
     // Conversion
     public:
@@ -220,6 +226,40 @@ void bit_reference<UIntType>::assign(
 {
     assert(pos < binary_digits<underlying_type>::value);
     val >> pos & 1 ? set() : reset();
+}
+// -------------------------------------------------------------------------- //
+
+
+
+// -------------- BIT REFERENCE: BITWISE ASSIGNMENT OPERATORS --------------- //
+// Assigns the value of the referenced bit through a bitwise and operation
+template <class UIntType>
+bit_reference<UIntType>& bit_reference<UIntType>::operator&=(
+    bit_value other
+) noexcept
+{
+    *_ptr &= ~(_mask * static_cast<underlying_type>(!other._value));
+    return *this;
+}
+
+// Assigns the value of the referenced bit through a bitwise or operation
+template <class UIntType>
+bit_reference<UIntType>& bit_reference<UIntType>::operator|=(
+    bit_value other
+) noexcept
+{
+    *_ptr |= _mask * static_cast<underlying_type>(other._value);
+    return *this;
+}
+
+// Assigns the value of the referenced bit through a bitwise xor operation
+template <class UIntType>
+bit_reference<UIntType>& bit_reference<UIntType>::operator^=(
+    bit_value other
+) noexcept
+{
+    *_ptr ^= _mask * static_cast<underlying_type>(other._value);
+    return *this;
 }
 // -------------------------------------------------------------------------- //
 

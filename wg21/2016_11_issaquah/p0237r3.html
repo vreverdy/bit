@@ -16,11 +16,11 @@
 <table>
 <tr>
     <td align="left"><b>Document number:</b></td>
-    <td align="left">P0237R2</td>
+    <td align="left">P0237R3</td>
 </tr>
 <tr>
     <td align="left"><b>Date:</b></td>
-    <td align="left">2016-07-11</td>
+    <td align="left">2016-10-17</td>
 </tr>
 <tr>
     <td align="left"><b>Project:</b></td>
@@ -37,10 +37,6 @@
 <tr>
     <td></td>
     <td align="left">Robert J. Brunner</td>
-</tr>
-<tr>
-    <td></td>
-    <td align="left">Nathan Myers</td>
 </tr>
 </table>
 
@@ -101,7 +97,6 @@
 </ul>
 </p>
 
-
 If bit utilities make it to the standard, they will be used, at least, as the basis for an implementation of a dynamic bitset, and are likely to be used as an interface to the underlying containers of words for unbounded and bounded precision arithmetic.
 
 <hr>
@@ -137,7 +132,7 @@ If bit utilities make it to the standard, they will be used, at least, as the ba
         constexpr bit_pointer(underlying_type* ptr, size_type pos);<br>
         constexpr bit_iterator(iterator_type i, size_type pos);
         </tt>
-        <br> &rarr; [It should result in an undefined behaviour]
+        <br> &rarr; [It should result in an undefined behavior]
     </li>
     <li>Should the bit utility classes have an assignment operator taking the last bit of a <tt>UIntType</tt>?<br>
         <tt class="code">
@@ -191,7 +186,7 @@ If bit utilities make it to the standard, they will be used, at least, as the ba
         </tt>
         <br> &rarr; [Not necessary if argument deduction get accepted.]
     </li>
-    <li>Should <tt>std::bit_reference</tt> have member swap functions?<br>
+    <li>Should <tt>std::bit_value</tt> have member swap functions?<br>
         <tt class="code">
         template &lt;class T&gt; <br>
         void swap(bit_reference&lt;T&gt; other);<br>
@@ -229,7 +224,7 @@ If bit utilities make it to the standard, they will be used, at least, as the ba
         <tt class="code">
         constexpr bit_pointer(std::nullptr_t, size_type);
         </tt>
-        <br> &rarr; [Undefined behaviour.]
+        <br> &rarr; [Undefined behavior.]
     </li>
     <li>Bikeshed the following names:<br>
         <tt class="code">
@@ -259,7 +254,7 @@ If bit utilities make it to the standard, they will be used, at least, as the ba
         <tt><del>
         template &lt;class UIntType&gt; <br>
         bit_value&amp; operator=(UIntType val) noexcept;<br>
-        bit_reference&amp; operator=(underlying_type val) noexcept;
+        bit_reference&amp; operator=(underlying_type val) noexcept;<br>
         </del></tt>
     </li>
     <li>The maker functions have been removed because of argument deduction for class templates <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0091r2.html">P0091R2</a>. They may be reintroduced later if argument deduction for class templates do not make it into the standard:<br>
@@ -279,7 +274,7 @@ If bit utilities make it to the standard, they will be used, at least, as the ba
         template &lt;class T&gt;<br>
         constexpr bit_iterator&lt;T&gt; make_bit_iterator(T i);<br>
         template &lt;class T&gt;<br>
-        constexpr bit_iterator&lt;T&gt; make_bit_iterator(T i, typename bit_iterator&lt;T&gt;::size_type pos);
+        constexpr bit_iterator&lt;T&gt; make_bit_iterator(T i, typename bit_iterator&lt;T&gt;::size_type pos);<br>
         <del></tt>
     </li>
     <li>The assignment operators with an implicit zero position have been removed because they were considered misleading:<br>
@@ -288,12 +283,68 @@ If bit utilities make it to the standard, they will be used, at least, as the ba
         bit_value&amp; operator=(UIntType val) noexcept;<br>
         bit_reference&amp; operator=(underlying_type val) noexcept;<br>
         bit_pointer&amp; operator=(underlying_type* ptr) noexcept;<br>
-        bit_iterator&amp; operator=(iterator_type i);
+        bit_iterator&amp; operator=(iterator_type i);<br>
         </del></tt>
+    </li>
 </ul>
 </p>
 
 <p>The future revision of this proposal will include <tt>assign</tt> functions, <tt>swap</tt> members for <tt>std::bit_value</tt>, and bitwise operators. Several alternative designs for <tt>std::bit_value</tt> with a template parameter will also be included.</p>
+
+<hr>
+
+<h3><a name="0.2">Second update [July 2016 (post-Oulu) &rarr; October 2016 (pre-Issaquah)] (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0237r2.html">P0237R2</a> &rarr; <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0237r3.html">P0237R3</a>)</a></h3>
+
+<p>According to the feedback received in Oulu, the following elements have been added or removed:
+<ul>
+    <li> Assign member functions have been added to both <tt>std::bit_value</tt> and <tt>std::bit_reference</tt>:<br>
+        <tt><ins>
+        template &lt;class UIntType&gt;<br>
+        void assign(UIntType val) noexcept;<br>
+        template &lt;class UIntType&gt;<br>
+        void assign(UIntType val, size_type pos);<br>
+        void assign(underlying_type val) noexcept;<br>
+        void assign(underlying_type val, size_type pos);<br>
+        </ins></tt>
+    </li>
+    <li> Bitwise operators have been added to both <tt>std::bit_value</tt> and <tt>std::bit_reference</tt>:<br>
+        <tt><ins>
+        bit_value&amp; operator&amp;=(bit_value other) noexcept;<br>
+        bit_value&amp; operator&#124;=(bit_value other) noexcept;<br>
+        bit_value&amp; operator&#94;=(bit_value other) noexcept;<br>
+        constexpr bit_value operator&amp;(bit_value lhs, bit_value rhs) noexcept;<br>
+        constexpr bit_value operator&#124;(bit_value lhs, bit_value rhs) noexcept;<br>
+        constexpr bit_value operator&#94;(bit_value lhs, bit_value rhs) noexcept;<br>
+        bit_reference&amp; operator&amp;=(bit_value other) noexcept;<br>
+        bit_reference&amp; operator&#124;=(bit_value other) noexcept;<br>
+        bit_reference&amp; operator&#94;=(bit_value other) noexcept;<br>
+        </ins></tt>
+    </li>
+    <li> Swap members have been added to <tt>std::bit_value</tt> to match the interface of <tt>std::bit_reference</tt>:<br>
+        <tt><ins>
+        void swap(bit_value&amp; other);<br>
+        template &lt;class T&gt; <br>
+        void swap(bit_reference&lt;T&gt; other);<br>
+        </ins></tt>
+    </li>
+    <li> Constructors of <tt>std::bit_pointer</tt> from <tt>nullptr</tt> have been updated:<br>
+        <tt>
+        <del>explicit</del> constexpr bit_pointer(std::nullptr_t) noexcept;<br>
+        <del>constexpr bit_pointer(std::nullptr_t, size_type);</del><br>
+        </tt>
+    </li>
+    
+</ul>
+</p>
+
+<p>On top of it, the two following constants were added:
+<ul>
+    <li><tt><ins>
+    static constexpr bit_value zero_bit(0U);<br>
+    static constexpr bit_value one_bit(1U);<br>
+    </tt></ins></li>
+</ul>
+</p>
 
 <hr>
 
@@ -430,8 +481,9 @@ count(
 }
 </pre>
 
-As illustrated in these examples, bit utilities act as a convenient interface between high level code that can use bit manipulation through bit iterators, and low level algorithms that can call dedicated instruction sets and compiler intrinsics.
+<p>As illustrated in these examples, bit utilities act as a convenient interface between high level code that can use bit manipulation through bit iterators, and low level algorithms that can call dedicated instruction sets and compiler intrinsics.</p>
 
+<p> More information as well as more examples can be found in the presentation <q><a href = "https://youtu.be/PA7oFnarcXQ">From Numerical Cosmology to Efficient Bit Abstractions for the Standard Library</a></q> that was given during <a href = "http://cppcon.org/">CppCon</a> 2016.</p>
 <hr>
 
 <h2><a name="3.0">Proposed Wording</a></h2>
@@ -466,7 +518,7 @@ struct binary_digits
 </pre>
     
 <em>Requires:</em> <tt>std::is_integral&lt;UIntType&gt;::value &amp;&amp; std::is_unsigned&lt;UIntType&gt;::value</tt>.<br>
-<em>Remarks:</em> This helper struct allows users to extend the behaviour of bit utilities on other types (for example <tt>__uint128_t</tt>) through their own specializations, independently from <tt>std::numeric_limits::digits</tt>.
+<em>Remarks:</em> This helper struct allows users to extend the behavior of bit utilities on other types (for example <tt>__uint128_t</tt>) through their own specializations, independently from <tt>std::numeric_limits::digits</tt>.
 
 <hr>
 
@@ -496,9 +548,23 @@ class bit_value
   // Assignment
   template &lt;class T&gt; 
   bit_value&amp; operator=(bit_reference&lt;T&gt; val) noexcept;
+  template &lt;class UIntType&gt;
+  void assign(UIntType val) noexcept;
+  template &lt;class UIntType&gt; 
+  void assign(UIntType val, size_type pos);
+  
+  // Bitwise assignment
+  bit_value&amp; operator&amp;=(bit_value other) noexcept;
+  bit_value&amp; operator&#124;=(bit_value other) noexcept;
+  bit_value&amp; operator&#94;=(bit_value other) noexcept;
 
   // Conversion
   explicit constexpr operator bool() const noexcept;
+
+  // Swap members
+  void swap(bit_value&amp; other);
+  template &lt;class T&gt; 
+  void swap(bit_reference&lt;T&gt; other);
 
   // Bit manipulation
   void set(bool b) noexcept;
@@ -506,6 +572,11 @@ class bit_value
   void reset() noexcept;
   void flip() noexcept;
 };
+
+// Bitwise operators
+constexpr bit_value operator&amp;(bit_value lhs, bit_value rhs) noexcept;
+constexpr bit_value operator&#124;(bit_value lhs, bit_value rhs) noexcept;
+constexpr bit_value operator&#94;(bit_value lhs, bit_value rhs) noexcept;
 
 // Comparison operators
 constexpr bool operator==(bit_value lhs, bit_value rhs) noexcept;
@@ -526,6 +597,10 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
   std::basic_istream&lt;CharT, Traits&gt;&amp; is,
   bit_value&amp; x
 );
+
+// Constants
+static constexpr bit_value zero_bit(0U);
+static constexpr bit_value one_bit(1U);
 </pre>
 
 <h4><a name="3.3.1">Lifecycle</h4>
@@ -556,19 +631,38 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
     <em>Returns:</em> <tt>*this</tt>.
 </p>
 <p>
-    <tt class="code">template &lt;class UIntType&gt; bit_value&amp; operator=(UIntType val) noexcept;</tt><br>
-    <em>Requires:</em> <tt>std::binary_digits&lt;UIntType&gt;::value</tt> should exist and be strictly positive.<br>
+    <tt class="code">template &lt;class UIntType&gt; void assign(UIntType val) noexcept;</tt><br>
     <em>Effects:</em> Assigns the bit at position <tt>0</tt> of <tt>val</tt> as in <tt>static_cast&lt;bool&gt;(val &amp; static_cast&lt;UIntType&gt;(1))</tt> to the bit value.<br>
+</p>
+<p>
+    <tt class="code">template &lt;class UIntType&gt; void assign(UIntType val, size_type pos);</tt><br>
+    <em>Requires:</em> <tt>std::binary_digits&lt;UIntType&gt;::value</tt> should exist, be strictly positive and <tt>pos</tt> should verify <tt>pos &lt; std::binary_digits&lt;UIntType&gt;::value</tt>, otherwise the behavior is undefined.<br>
+    <em>Effects:</em> Assigns the bit at position <tt>pos</tt> of <tt>val</tt> as in <tt>static_cast&lt;bool&gt;((val &gt;&gt; pos) &amp; static_cast&lt;UIntType&gt;(1))</tt> to the bit value.<br>
+    <em>Remarks:</em> For unsigned integral types, <tt>static_cast&lt;bool&gt;((val &gt;&gt; pos) &amp; static_cast&lt;UIntType&gt;(1))</tt> is equivalent to <tt>static_cast&lt;bool&gt;(val &amp; (static_cast&lt;UIntType&gt;(1) &lt;&lt; pos))</tt> for <tt>pos &lt; std::binary_digits&lt;UIntType&gt;::value</tt>.
+</p>
+
+<h4><a name="3.3.3">Bitwise assignment</h4>
+<p>
+    <tt class="code">bit_value&amp; operator&amp;=(bit_value other) noexcept;</tt><br>
+    <tt class="code">bit_value&amp; operator&#124;=(bit_value other) noexcept;</tt><br>
+    <tt class="code">bit_value&amp; operator&#94;=(bit_value other) noexcept;</tt><br>
+    <em>Effects:</em> Assigns a new value to the bit value by performing a bitwise operation with another bit value.<br>
     <em>Returns:</em> <tt>*this</tt>.
 </p>
 
-<h4><a name="3.3.3">Conversion</h4>
+<h4><a name="3.3.4">Conversion</h4>
 <p>
     <tt class="code">explicit constexpr operator bool() const noexcept;</tt><br>
     <em>Effects:</em> Explicitly converts the bit value to a boolean value.
 </p>
+<h4><a name="3.3.5">Swap members</h4>
+<p>
+    <tt class="code">void swap(bit_value&amp; other);</tt><br>
+    <tt class="code">template &lt;class T&gt; void swap(bit_reference&lt;T&gt; other);</tt><br>
+    <em>Effects:</em> Swaps the value of the bit value with the value of the <tt>other</tt> bit.
+</p>
 
-<h4><a name="3.3.4">Bit manipulation</h4>
+<h4><a name="3.3.6">Bit manipulation</h4>
 <p>
     <tt class="code">void set(bool b) noexcept;</tt><br>
     <em>Effects:</em> Assigns <tt>b</tt> to the bit value.
@@ -586,7 +680,17 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
     <em>Effects:</em> Flips the bit value, <tt>0</tt> becoming <tt>1</tt> and <tt>1</tt> becoming <tt>0</tt>.
 </p>
 
-<h4><a name="3.3.5">Comparison operators</h4>
+<h4><a name="3.3.8">Bitwise operators</h4>
+<p>
+    <tt class="code">constexpr bit_value operator&amp;(bit_value lhs, bit_value rhs) noexcept;</tt><br>
+    <tt class="code">constexpr bit_value operator&#124;(bit_value lhs, bit_value rhs) noexcept;</tt><br>
+    <tt class="code">constexpr bit_value operator&#94;(bit_value lhs, bit_value rhs) noexcept;</tt><br>
+    <em>Effects:</em> Applies bitwise operators to two single bits.<br>
+    <em>Returns:</em> The bit value resulting from the operation.<br>
+    <em>Remarks:</em> Bit references are handled through these operators using implicit conversions to bit values.
+</p>
+
+<h4><a name="3.3.8">Comparison operators</h4>
 <p>
     <tt class="code">constexpr bool operator==(bit_value lhs, bit_value rhs) noexcept;</tt><br>
     <tt class="code">constexpr bool operator!=(bit_value lhs, bit_value rhs) noexcept;</tt><br>
@@ -599,7 +703,7 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
     <em>Remarks:</em> Bit references get compared through these operators using implicit conversions to bit values.
 </p>
 
-<h4><a name="3.3.6">Stream functions</h4>
+<h4><a name="3.3.9">Stream functions</h4>
 <p>
     <tt class="code">template &lt;class CharT, class Traits&gt; std::basic_ostream&lt;CharT, Traits&gt;&amp; operator&lt;&lt;(std::basic_ostream&lt;CharT, Traits&gt;&amp; os, bit_value x);</tt><br>
     <em>Effects:</em> Outputs the bit value to the stream in a form equivalent to <tt>os &lt;&lt; static_cast&lt;int&gt;(static_cast&lt;bool&gt;(x))</tt>.<br>
@@ -607,7 +711,7 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
 </p>
 <p>
     <tt class="code">template &lt;class CharT, class Traits&gt; std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(std::basic_istream&lt;CharT, Traits&gt;&amp; is, bit_value&amp; x);</tt><br>
-    <em>Effects:</em> Reads the next character from the input stream and sets the bit value accordingly if this caracter is <tt>0</tt> or <tt>1</tt>. The behaviour is undefined otherwise.<br>
+    <em>Effects:</em> Reads the next character from the input stream and sets the bit value accordingly if this caracter is <tt>0</tt> or <tt>1</tt>. The behavior is undefined otherwise.<br>
     <em>Returns:</em> The updated stream.
 </p>
 
@@ -640,6 +744,13 @@ class bit_reference
   template &lt;class T&gt; 
   bit_reference&amp; operator=(const bit_reference&lt;T&gt;&amp; other) noexcept;
   bit_reference&amp; operator=(bit_value val) noexcept;
+  void assign(underlying_type val) noexcept;
+  void assign(underlying_type val, size_type pos);
+
+  // Bitwise assignment
+  bit_reference&amp; operator&amp;=(bit_value other) noexcept;
+  bit_reference&amp; operator&#124;=(bit_value other) noexcept;
+  bit_reference&amp; operator&#94;=(bit_value other) noexcept;
     
   // Conversion
   explicit constexpr operator bool() const noexcept;
@@ -711,7 +822,7 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
     <tt class="code">bit_reference&amp; operator=(const bit_reference&amp; other) noexcept;</tt><br>
     <em>Effects:</em> Copy assigns from the value of the bit referenced in <tt>other</tt>.<br>
     <em>Returns:</em> <tt>*this</tt>.<br>
-    <em>Remarks:</em> The behaviour is different than what a default copy assignment would be: the value of the <tt>other</tt> bit is copied, not the reference itself.
+    <em>Remarks:</em> The behavior is different than what a default copy assignment would be: the value of the <tt>other</tt> bit is copied, not the reference itself.
 </p>
 <p>
     <tt class="code">template &lt;class T&gt; bit_reference&amp; operator=(const bit_reference&lt;T&gt;&amp; other) noexcept;</tt><br>
@@ -725,31 +836,45 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
     <em>Returns:</em> <tt>*this</tt>.
 </p>
 <p>
-    <tt class="code">bit_reference&amp; operator=(underlying_type val) noexcept;</tt><br>
+    <tt class="code">void assign(underlying_type val) noexcept;</tt><br>
     <em>Effects:</em> Assigns the bit at position <tt>0</tt> of <tt>val</tt> as in <tt>static_cast&lt;bool&gt;(val &amp; static_cast&lt;UIntType&gt;(1))</tt> to the referenced bit.<br>
+</p>
+<p>
+    <tt class="code">void assign(underlying_type val, size_type pos);</tt><br>
+    <em>Requires:</em> <tt>pos</tt> should verify <tt>pos &lt; std::binary_digits&lt;UIntType&gt;::value</tt>, otherwise the behavior is undefined.<br>
+    <em>Effects:</em> Assigns the bit at position <tt>pos</tt> of <tt>ref</tt> as in <tt>static_cast&lt;bool&gt;((ref &gt;&gt; pos) &amp; static_cast&lt;UIntType&gt;(1))</tt> to the bit reference.<br>
+    <em>Remarks:</em> For unsigned integral types, <tt>static_cast&lt;bool&gt;((ref &gt;&gt; pos) &amp; static_cast&lt;UIntType&gt;(1))</tt> is equivalent to <tt>static_cast&lt;bool&gt;(ref &amp; (static_cast&lt;UIntType&gt;(1) &lt;&lt; pos))</tt> for <tt>pos &lt; std::binary_digits&lt;UIntType&gt;::value</tt>.
+</p>
+
+<h4><a name="3.4.3">Bitwise assignment</h4>
+<p>
+    <tt class="code">bit_reference&amp; operator&amp;=(bit_value other) noexcept;</tt><br>
+    <tt class="code">bit_reference&amp; operator&#124;=(bit_value other) noexcept;</tt><br>
+    <tt class="code">bit_reference&amp; operator&#94;=(bit_value other) noexcept;</tt><br>
+    <em>Effects:</em> Assigns a new value to the bit reference by performing a bitwise operation with a bit value.<br>
     <em>Returns:</em> <tt>*this</tt>.
 </p>
 
-<h4><a name="3.4.3">Conversion</h4>
+<h4><a name="3.4.4">Conversion</h4>
 <p>
     <tt class="code">explicit constexpr operator bool() const noexcept;</tt><br>
     <em>Effects:</em> Explicitly converts the bit value to a boolean value.
 </p>
 
-<h4><a name="3.4.4">Access</h4>
+<h4><a name="3.4.5">Access</h4>
 <p>
     <tt class="code">constexpr bit_pointer&lt;UIntType&gt; operator&amp;() const noexcept;</tt><br>
     <em>Returns:</em> A bit pointer pointing to the referenced bit.
 </p>
 
-<h4><a name="3.4.5">Swap members</h4>
+<h4><a name="3.4.6">Swap members</h4>
 <p>
     <tt class="code">template &lt;class T&gt; void swap(bit_reference&lt;T&gt; other);</tt><br>
     <tt class="code">void swap(bit_value&amp; other);</tt><br>
     <em>Effects:</em> Swaps the value of the referenced bit with the value of the <tt>other</tt> bit.
 </p>
 
-<h4><a name="3.4.6">Bit manipulation</h4>
+<h4><a name="3.4.7">Bit manipulation</h4>
 <p>
     <tt class="code">void set(bool b) noexcept;</tt><br>
     <em>Effects:</em> Assigns <tt>b</tt> to the referenced bit.
@@ -767,7 +892,7 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
     <em>Effects:</em> Flips the referenced bit, <tt>0</tt> becoming <tt>1</tt> and <tt>1</tt> becoming <tt>0</tt>.
 </p>
 
-<h4><a name="3.4.7">Underlying details</h4>
+<h4><a name="3.4.8">Underlying details</h4>
 <p>
   <tt class="code">constexpr underlying_type* address() const noexcept;</tt><br>
   <em>Returns:</em> A pointer to the object in which the referenced bit is.
@@ -782,7 +907,7 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
   <em>Returns:</em> A mask of <tt>underlying_type</tt> in which the bit at position <tt>pos</tt> is set to <tt>1</tt>. The mask is equivalent to <tt>static_cast&lt;UIntType&gt;(1) &lt;&lt; pos</tt>.
 </p>
 
-<h4><a name="3.4.8">Swap and exchange</h4>
+<h4><a name="3.4.9">Swap and exchange</h4>
 <p>
     <tt class="code">template &lt;class T, class U&gt; void swap(bit_reference&lt;T&gt; lhs, bit_reference&lt;U&gt; rhs) noexcept;</tt><br>
     <tt class="code">template &lt;class T&gt; void swap(bit_reference&lt;T&gt; lhs, bit_value&amp; rhs) noexcept;</tt><br>
@@ -795,7 +920,7 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
     <em>Remarks:</em> This function is an overload of <tt>std::exchange</tt> so that it performs the correct operation when operating on bits.<br>
 </p>
 
-<h4><a name="3.4.9">Stream functions</h4>
+<h4><a name="3.4.10">Stream functions</h4>
 <p>
     <tt class="code">template &lt;class CharT, class Traits, class T&gt; std::basic_ostream&lt;CharT, Traits&gt;&amp; operator&lt;&lt;(std::basic_ostream&lt;CharT, Traits&gt;&amp; os, bit_reference&lt;T&gt; x);</tt><br>
     <em>Effects:</em> Outputs the referenced bit to the stream in a form equivalent to <tt>os &lt;&lt; static_cast&lt;int&gt;(static_cast&lt;bool&gt;(x))</tt>.<br>
@@ -803,7 +928,7 @@ std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(
 </p>
 <p>
     <tt class="code">template &lt;class CharT, class Traits, class T&gt; std::basic_istream&lt;CharT, Traits&gt;&amp; operator&gt;&gt;(std::basic_istream&lt;CharT, Traits&gt;&amp; is, bit_reference&lt;T&gt;&amp; x);</tt><br>
-    <em>Effects:</em> Reads the next character from the input stream and sets the referenced bit accordingly if this caracter is <tt>0</tt> or <tt>1</tt>. The behaviour is undefined otherwise.<br>
+    <em>Effects:</em> Reads the next character from the input stream and sets the referenced bit accordingly if this caracter is <tt>0</tt> or <tt>1</tt>. The behavior is undefined otherwise.<br>
     <em>Returns:</em> The updated stream.
 </p>
 
@@ -824,14 +949,13 @@ class bit_pointer
   // Types
   using underlying_type = UIntType;
   using size_type = std::size_t;
-  using difference_type = std::ptrdiff_t;
+  using difference_type = /* Implementation defined, at least std::ptrdiff_t */;
 
   // Lifecycle
   bit_pointer() noexcept = default;
   template &lt;class T&gt; 
   constexpr bit_pointer(const bit_pointer&lt;T&gt;&amp; other) noexcept;
-  explicit constexpr bit_pointer(std::nullptr_t) noexcept;
-  constexpr bit_pointer(std::nullptr_t, size_type);
+  constexpr bit_pointer(std::nullptr_t) noexcept;
   explicit constexpr bit_pointer(underlying_type* ptr) noexcept;
   constexpr bit_pointer(underlying_type* ptr, size_type pos);
     
@@ -904,12 +1028,8 @@ constexpr bool operator&gt;=(bit_pointer&lt;T&gt; lhs, bit_pointer&lt;U&gt; rhs)
     <em>Remarks:</em> The main usage of this constructor is when <tt>T</tt> is the same as <tt>UIntType</tt>, but differently cv-qualified.
 </p>
 <p>
-    <tt class="code">explicit constexpr bit_pointer(std::nullptr_t) noexcept;</tt><br>
+    <tt class="code">constexpr bit_pointer(std::nullptr_t) noexcept;</tt><br>
     <em>Effects:</em> Constructs a null bit pointer with position <tt>0</tt>.
-</p>
-<p>
-    <tt class="code">constexpr bit_pointer(std::nullptr_t, size_type);</tt><br>
-    <em>Effects:</em> Constructs a null bit pointer with a non-zero position <tt>0</tt>.
 </p>
 <p>
     <tt class="code">explicit constexpr bit_pointer(underlying_type* ptr) noexcept;</tt><br>
@@ -936,11 +1056,6 @@ constexpr bool operator&gt;=(bit_pointer&lt;T&gt; lhs, bit_pointer&lt;U&gt; rhs)
 <p>
     <tt class="code">template &lt;class T&gt; bit_pointer&amp; operator=(const bit_pointer&lt;T&gt;&amp; other) noexcept;</tt><br>
     <em>Effects:</em> Copy assigns from the <tt>other</tt> bit pointer.<br>
-    <em>Returns:</em> <tt>*this</tt>.
-</p>
-<p>
-    <tt class="code">bit_pointer&amp; operator=(underlying_type* ptr) noexcept;</tt><br>
-    <em>Effects:</em> Assigns a bit pointer pointing to the bit at position <tt>0</tt> of <tt>ptr</tt> as in <tt>static_cast&lt;bool&gt;(*ptr &amp; static_cast&lt;UIntType&gt;(1))</tt> to the bit pointer.<br>
     <em>Returns:</em> <tt>*this</tt>.
 </p>
 
@@ -1020,7 +1135,7 @@ class bit_iterator
   using underlying_type = typename _cv_iterator_traits&lt;Iterator&gt;::value_type;
   using iterator_category = typename std::iterator_traits&lt;Iterator&gt;::iterator_category;
   using value_type = bit_value;
-  using difference_type = std::ptrdiff_t;
+  using difference_type = /* Implementation defined, at least std::ptrdiff_t */;
   using pointer = bit_pointer&lt;underlying_type&gt;;
   using reference = bit_reference&lt;underlying_type&gt;;
   using size_type = std::size_t;
@@ -1186,6 +1301,47 @@ constexpr bool operator&gt;=(const bit_iterator&lt;T&gt;&amp; lhs, const bit_ite
 <hr>
 
 <h2><a name="4.0">Design questions</a></h2>
+
+<p>The following minor questions will need to be answered:
+<ul>
+    <li>When the position exceeds <tt>std::binary_digits</tt>, it leads to undefined behavior. In that context, can the constructors taking a position parameter be marked <tt>noexcept</tt>?<br></li>
+    <li>Should <tt>std::bit_value</tt> and <tt>std::bit_reference</tt> have a <tt>set</tt> function member taking a <tt>bool</tt>?<br>
+        <tt class="code">
+        void set(bool b) noexcept;<br>
+        </tt>
+    </li>
+    <li>Should <tt>std::bit_value</tt> and <tt>std::bit_reference</tt> have a facet for input and output operations? If so, how to design this facet?
+    </li>
+    <li>Should <tt>std::exchange</tt> be overloaded for <tt>std::bit_reference</tt>?<br>
+        <tt class="code">
+        template &lt;class T, class U = bit_value&gt;<br>
+        bit_value exchange(bit_reference&lt;T&gt; x, U&amp;&amp; val);<br>
+        </tt>
+    </li>
+    <li>Should we have specific bitwise and comparison operators for <tt>std::bit_reference</tt> for optimization purposes (which ones?) instead of using implicit conversion to <tt>std::bit_value</tt>?</li>
+    <li>What functions should be marked <tt>constexpr</tt>? In particular, should non-const members be marked <tt>constexpr</tt>?
+    <li>Bikeshed the following names:<br>
+        <tt class="code">
+        zero_bit<br>
+        one_bit<br>
+        </tt>
+    </li>
+</ul>
+</p>
+
+<p>Additionally, a major design question has been raised during the Oulu meeting: should <tt>std::bit_value</tt> be a template class? The major advantage would be to allow implicit conversions from <tt>std::bit_value&amp;</tt> to <tt>std::bit_reference</tt>, and from <tt>std::bit_value*</tt> to <tt>std::bit_pointer</tt>. Three main possibilities should be considered and discussed:
+<ul>
+    <li><tt>std::bit_value</tt> is a non-template class as in the current design</li>
+    <li><tt>std::bit_value</tt> is a template class, and stores the bit inside as the first bit of the underlying value, losing information about the position</li>
+    <li><tt>std::bit_value</tt> is a template class, and stores the bit inside at the specified position, basically operating as a <tt>std::bit_reference</tt> that copies the underlying value</li>
+</ul>
+For the two last options, the design becomes more complex. Two questions are particularly crucial:
+<ul>
+    <li>How to manage cv-qualified bit values and references as well as conversions between them? For example, what should the semantics of <tt>const bit_value&lt;T&gt;</tt>, <tt>bit_value&lt;const T&gt;</tt>, <tt>const bit_reference&lt;T&gt;</tt>, and <tt>bit_reference&lt;const T&gt;</tt> be and how should they interact with each other? Furthermore, what should a <tt>const bit_value&lt;volatile T&gt;</tt> or a <tt>volatile bit_reference&lt;const T&gt;</tt> represent? The question has been detailed on the <a href = "https://groups.google.com/a/isocpp.org/forum/#!searchin/std-proposals/wrappers/std-proposals/3AWRPYgcCn8/xNyThM65BAAJ">ISO C++ Standard - Future Proposals</a> board. As the question goes beyond the sole scope of the bit manipulation library and concerns all template class wrappers, it may also be asked to LWG.</li> 
+    <li>Temporary bit values with a defaulted underlying type will be required anyway. Two possible solutions are: a specialized version of <tt>std::bit_value</tt> such as <tt>std::bit_value&lt;void&gt;</tt>, or a new non-template class, whose name has to be defined.</li>
+</ul>
+We expect to answer these important design questions during the Issaquah meeting.
+</p>
 
 <hr>
 
