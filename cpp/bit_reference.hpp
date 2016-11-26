@@ -53,8 +53,8 @@ class bit_reference
     template <class T> 
     bit_reference& operator=(const bit_reference<T>& other) noexcept;
     bit_reference& operator=(bit_value val) noexcept;
-    void assign(underlying_type val) noexcept;
-    void assign(underlying_type val, size_type pos);
+    bit_reference& assign(underlying_type val) noexcept;
+    bit_reference& assign(underlying_type val, size_type pos);
 
     // Bitwise assignment operators
     public:
@@ -100,22 +100,9 @@ class bit_reference
     private:
     underlying_type* _ptr;
     typename std::remove_cv<underlying_type>::type _mask;
-
-    // Stream functions
-    public:
-    template <class CharT, class Traits, class T>
-    friend std::basic_ostream<CharT, Traits>& operator<<(
-        std::basic_ostream<CharT, Traits>& os,
-        bit_reference<T> x
-    );
-    template <class CharT, class Traits, class T>
-    friend std::basic_istream<CharT, Traits>& operator>>(
-        std::basic_istream<CharT, Traits>& is,
-        bit_reference<T>& x
-    );
 };
 
-// Swap and exchange
+// Swap
 template <class T, class U>
 void swap(
     bit_reference<T> lhs,
@@ -131,10 +118,17 @@ void swap(
     bit_value& lhs,
     bit_reference<U> rhs
 ) noexcept;
-template <class T, class U = bit_value>
-bit_value exchange(
-    bit_reference<T> x,
-    U&& val
+
+// Stream functions
+template <class CharT, class Traits, class T>
+std::basic_istream<CharT, Traits>& operator>>(
+    std::basic_istream<CharT, Traits>& is,
+    bit_reference<T>& x
+);
+template <class CharT, class Traits, class T>
+std::basic_ostream<CharT, Traits>& operator<<(
+    std::basic_ostream<CharT, Traits>& os,
+    bit_reference<T> x
 );
 /* ************************************************************************** */
 
@@ -210,22 +204,24 @@ bit_reference<UIntType>& bit_reference<UIntType>::operator=(
 
 // Assigns the aligned bit of a value to the bit reference
 template <class UIntType>
-void bit_reference<UIntType>::assign(
+bit_reference<UIntType>& bit_reference<UIntType>::assign(
     underlying_type val
 ) noexcept
 {
     val & 1 ? set() : reset();
+    return *this;
 }
 
 // Assigns an unaligned bit of a value to the bit reference
 template <class UIntType>
-void bit_reference<UIntType>::assign(
+bit_reference<UIntType>& bit_reference<UIntType>::assign(
     underlying_type val, 
     size_type pos
 )
 {
     assert(pos < binary_digits<underlying_type>::value);
     val >> pos & 1 ? set() : reset();
+    return *this;
 }
 // -------------------------------------------------------------------------- //
 
@@ -386,34 +382,7 @@ bit_reference<UIntType>::mask(
 
 
 
-// -------------------- BIT REFERENCE: STREAM FUNCTIONS --------------------- //
-// Inserts a bit reference in an output stream
-template <class CharT, class Traits, class T>
-std::basic_ostream<CharT, Traits>& operator<<(
-    std::basic_ostream<CharT, Traits>& os,
-    bit_reference<T> x
-)
-{
-    return os << static_cast<char>('0' + static_cast<bool>(x));
-}
-
-// Extracts a bit reference from an input stream
-template <class CharT, class Traits, class T>
-std::basic_istream<CharT, Traits>& operator>>(
-    std::basic_istream<CharT, Traits>& is,
-    bit_reference<T>& x
-)
-{
-    bit_value tmp;
-    is >> tmp;
-    x = tmp;
-    return is;
-}
-// -------------------------------------------------------------------------- //
-
-
-
-// -------------------- BIT REFERENCE: SWAP AND EXCHANGE -------------------- //
+// -------------------------- BIT REFERENCE: SWAP --------------------------- //
 // Swaps two bit references
 template <class T, class U>
 void swap(
@@ -452,17 +421,73 @@ void swap(
         rhs.flip();
     }
 }
+// -------------------------------------------------------------------------- //
 
-// Exchanges a bit reference and a value
-template <class T, class U>
-bit_value exchange(
-    bit_reference<T> x,
-    U&& val
+
+
+// -------------------- BIT REFERENCE: STREAM FUNCTIONS --------------------- //
+// Extracts a bit reference from an input stream
+template <class CharT, class Traits, class T>
+std::basic_istream<CharT, Traits>& operator>>(
+    std::basic_istream<CharT, Traits>& is,
+    bit_reference<T>& x
 )
 {
-    bit_value old = x;
-    x = val;
-    return old;
+    using stream_type = std::basic_istream<CharT, Traits>;
+    using traits_type = typename stream_type::traits_type;
+    using ios_base = typename stream_type::ios_base;
+    constexpr char zero = '0';
+    constexpr char one = '1';
+    constexpr typename stream_type::int_type eof = traits_type::eof();
+    typename ios_base::iostate state = ios_base::goodbit;
+    typename stream_type::char_type char_value = 0;
+    typename stream_type::int_type int_value = 0;
+    typename stream_type::sentry sentry(is);
+    bool ok = false;
+    bit_value tmp = x;
+    if (sentry) {
+        try {
+            int_value = is.rdbuf()->sbumpc();
+            if (traits_type::eq_int_type(int_value, eof)) {
+                state |= ios_base::eofbit;
+            } else {
+                char_value = traits_type::to_char_type(int_value);
+                if (traits_type::eq(char_value, is.widen(zero))) {
+                    tmp.reset();
+                    ok = true;
+                } else if (traits_type::eq(char_value, is.widen(one))) {
+                    tmp.set();
+                    ok = true;
+                } else {
+                    int_value = is.rdbuf()->sputbackc(char_value);
+                    if (traits_type::eq_int_type(int_value, eof)) {
+                        state |= ios_base::failbit;
+                    }
+                }
+            }
+        } catch(...) {
+            is.setstate(ios_base::badbit);
+        }
+    }
+    if (ok) {
+        x = tmp;
+    } else {
+        state |= ios_base::failbit;
+    }
+    state ? is.setstate(state) : void();
+    return is;
+}
+
+// Inserts a bit reference in an output stream
+template <class CharT, class Traits, class T>
+std::basic_ostream<CharT, Traits>& operator<<(
+    std::basic_ostream<CharT, Traits>& os,
+    bit_reference<T> x
+)
+{
+    constexpr char zero = '0';
+    constexpr char one = '1';
+    return os << os.widen(x ? one : zero);
 }
 // -------------------------------------------------------------------------- //
 

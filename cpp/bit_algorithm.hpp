@@ -30,8 +30,8 @@ namespace bit {
 
 /* ***************************** BIT CONSTANTS ****************************** */
 // Bit constants
-static constexpr bit_value zero_bit(0U);
-static constexpr bit_value one_bit(1U);
+static constexpr bit_value bit0(0U);
+static constexpr bit_value bit1(1U);
 /* ************************************************************************** */
 
 
@@ -69,10 +69,12 @@ count(
     // Assertions
     _assert_range_viability(first, last);
     
-    // Initialization
+    // Types and constants
     using underlying_type = typename bit_iterator<InputIt>::underlying_type;
     using difference_type = typename bit_iterator<InputIt>::difference_type;
     constexpr difference_type digits = binary_digits<underlying_type>::value;
+    
+    // Initialization
     difference_type result = 0;
     auto it = first.base();
     
@@ -120,18 +122,21 @@ void reverse(
     // Assertions
     _assert_range_viability(first, last);
     
-    // Initialization
+    // Types and constants
     using underlying_type = typename bit_iterator<BidirIt>::underlying_type;
     using size_type = typename bit_iterator<BidirIt>::size_type;
     constexpr size_type digits = binary_digits<underlying_type>::value;
-    const bool is_last_null = last.position() == 0;
-    size_type diff = (digits - last.position()) * !is_last_null;
+    
+    // Initialization
+    const bool is_first_aligned = first.position() == 0;
+    const bool is_last_aligned = last.position() == 0;
+    size_type gap = (digits - last.position()) * !is_last_aligned;
     auto it = first.base();
     underlying_type first_value = {};
     underlying_type last_value = {};
     
     // Reverse when bit iterators are aligned
-    if (first.position() == 0 && last.position() == 0) {
+    if (is_first_aligned && is_last_aligned) {
         std::reverse(first.base(), last.base());
         for (; it !=  last.base(); ++it) {
             *it = _bitswap(*it);
@@ -140,34 +145,34 @@ void reverse(
     } else if (first.base() != last.base()) {
         // Save first and last element
         first_value = *first.base();
-        last_value = *std::prev(last.base(), is_last_null);
+        last_value = *std::prev(last.base(), is_last_aligned);
         // Reverse the underlying sequence
-        std::reverse(first.base(), std::next(last.base(), !is_last_null));
+        std::reverse(first.base(), std::next(last.base(), !is_last_aligned));
         // Shift the underlying sequence to the left
-        if (first.position() < diff) {
+        if (first.position() < gap) {
             it = first.base();
-            diff = diff - first.position();
+            gap = gap - first.position();
             for (; it != last.base(); ++it) {
-                *it = _shld<underlying_type>(*it, *std::next(it), diff);
+                *it = _shld<underlying_type>(*it, *std::next(it), gap);
             }
-            *it <<= diff;
+            *it <<= gap;
             it = first.base();
         // Shift the underlying sequence to the right
-        } else if (first.position() > diff) {
-            it = std::prev(last.base(), is_last_null);
-            diff = first.position() - diff;
+        } else if (first.position() > gap) {
+            it = std::prev(last.base(), is_last_aligned);
+            gap = first.position() - gap;
             for (; it != first.base(); --it) {
-                *it = _shrd<underlying_type>(*it, *std::prev(it), diff);
+                *it = _shrd<underlying_type>(*it, *std::prev(it), gap);
             }
-            *it >>= diff; 
+            *it >>= gap; 
             it = first.base();
         }
         // Bitswap every element of the underlying sequence
-        for (; it != std::next(last.base(), !is_last_null); ++it) {
+        for (; it != std::next(last.base(), !is_last_aligned); ++it) {
             *it = _bitswap(*it);
         }
         // Blend bits of the first element
-        if (first.position() != 0) {
+        if (!is_first_aligned) {
             *first.base() = _bitblend<underlying_type>(
                 first_value,
                 *first.base(),
@@ -176,7 +181,7 @@ void reverse(
             );
         }
         // Blend bits of the last element
-        if (last.position() != 0) {
+        if (!is_last_aligned) {
             *last.base() = _bitblend<underlying_type>(
                 *last.base(),
                 last_value,
@@ -188,7 +193,7 @@ void reverse(
     } else {
         *it = _bitblend<underlying_type>(
             *it, 
-            _bitswap(*it >> first.position()) >> diff, 
+            _bitswap(*it >> first.position()) >> gap, 
             first.position(), 
             last.position() - first.position()
         );

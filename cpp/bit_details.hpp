@@ -21,6 +21,7 @@
 #include <utility>
 #include <iterator>
 #include <algorithm>
+#include <stdexcept>
 #include <type_traits>
 // Project sources
 // Third-party libraries
@@ -47,8 +48,8 @@ struct binary_digits
 };
 
 // Binary digits value
-template <class UIntType>
-constexpr std::size_t binary_digits_v = binary_digits<UIntType>::value;
+template <class T>
+constexpr std::size_t binary_digits_v = binary_digits<T>::value;
 /* ************************************************************************** */
 
 

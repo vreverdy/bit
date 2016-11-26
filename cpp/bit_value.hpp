@@ -48,6 +48,10 @@ class bit_value
     public:
     template <class T> 
     bit_value& operator=(bit_reference<T> ref) noexcept;
+    template <class UIntType> 
+    bit_value& assign(UIntType val) noexcept;
+    template <class UIntType> 
+    bit_value& assign(UIntType val, size_type pos);
 
     // Bitwise assignment operators
     public:
@@ -117,20 +121,19 @@ class bit_value
         bit_value lhs, 
         bit_value rhs
     ) noexcept;
-
-    // Stream functions
-    public:
-    template <class CharT, class Traits>
-    friend std::basic_ostream<CharT, Traits>& operator<<(
-        std::basic_ostream<CharT, Traits>& os,
-        bit_value x
-    );
-    template <class CharT, class Traits>
-    friend std::basic_istream<CharT, Traits>& operator>>(
-        std::basic_istream<CharT, Traits>& is,
-        bit_value& x
-    );
 };
+
+// Stream functions
+template <class CharT, class Traits>
+std::basic_istream<CharT, Traits>& operator>>(
+    std::basic_istream<CharT, Traits>& is,
+    bit_value& x
+);
+template <class CharT, class Traits>
+std::basic_ostream<CharT, Traits>& operator<<(
+    std::basic_ostream<CharT, Traits>& os,
+    bit_value x
+);
 /* ************************************************************************** */
 
 
@@ -177,6 +180,29 @@ bit_value& bit_value::operator=(
 ) noexcept
 {
     _value = static_cast<bool>(ref);
+    return *this;
+}
+
+// Assigns the aligned bit of a value to the bit value
+template <class UIntType> 
+bit_value& bit_value::assign(
+    UIntType val
+) noexcept
+{
+    static_assert(binary_digits<UIntType>::value, "");
+    _value = val & 1;
+    return *this;
+}
+
+// Assigns an unaligned bit of a value to the bit value
+template <class UIntType> 
+bit_value& bit_value::assign(
+    UIntType val, 
+    size_type pos
+)
+{
+    assert(pos < binary_digits<UIntType>::value);
+    _value = val >> pos & 1;
     return *this;
 }
 // -------------------------------------------------------------------------- //
@@ -380,16 +406,6 @@ constexpr bool operator>=(
 
 
 // ---------------------- BIT VALUE: STREAM FUNCTIONS ----------------------- //
-// Inserts a bit value in an output stream
-template <class CharT, class Traits>
-std::basic_ostream<CharT, Traits>& operator<<(
-    std::basic_ostream<CharT, Traits>& os,
-    bit_value x
-)
-{
-    return os << static_cast<char>('0' + x._value);
-}
-
 // Extracts a bit value from an input stream
 template <class CharT, class Traits>
 std::basic_istream<CharT, Traits>& operator>>(
@@ -397,7 +413,61 @@ std::basic_istream<CharT, Traits>& operator>>(
     bit_value& x
 )
 {
-    return is >> x._value;
+    using stream_type = std::basic_istream<CharT, Traits>;
+    using traits_type = typename stream_type::traits_type;
+    using ios_base = typename stream_type::ios_base;
+    constexpr char zero = '0';
+    constexpr char one = '1';
+    constexpr typename stream_type::int_type eof = traits_type::eof();
+    typename ios_base::iostate state = ios_base::goodbit;
+    typename stream_type::char_type char_value = 0;
+    typename stream_type::int_type int_value = 0;
+    typename stream_type::sentry sentry(is);
+    bool ok = false;
+    bit_value tmp = x;
+    if (sentry) {
+        try {
+            int_value = is.rdbuf()->sbumpc();
+            if (traits_type::eq_int_type(int_value, eof)) {
+                state |= ios_base::eofbit;
+            } else {
+                char_value = traits_type::to_char_type(int_value);
+                if (traits_type::eq(char_value, is.widen(zero))) {
+                    tmp.reset();
+                    ok = true;
+                } else if (traits_type::eq(char_value, is.widen(one))) {
+                    tmp.set();
+                    ok = true;
+                } else {
+                    int_value = is.rdbuf()->sputbackc(char_value);
+                    if (traits_type::eq_int_type(int_value, eof)) {
+                        state |= ios_base::failbit;
+                    }
+                }
+            }
+        } catch(...) {
+            is.setstate(ios_base::badbit);
+        }
+    }
+    if (ok) {
+        x = tmp;
+    } else {
+        state |= ios_base::failbit;
+    }
+    state ? is.setstate(state) : void();
+    return is;
+}
+
+// Inserts a bit value in an output stream
+template <class CharT, class Traits>
+std::basic_ostream<CharT, Traits>& operator<<(
+    std::basic_ostream<CharT, Traits>& os,
+    bit_value x
+)
+{
+    constexpr char zero = '0';
+    constexpr char one = '1';
+    return os << os.widen(x ? one : zero);
 }
 // -------------------------------------------------------------------------- //
 

@@ -1,6 +1,6 @@
 // ================================== BIT =================================== //
 // Project:         The C++ Bit Library
-// Name:            bit.hpp
+// Name:            bit.cpp
 // Description:     Illustrates the use of the bit library
 // Creator:         Vincent Reverdy
 // Contributor(s):  Vincent Reverdy [2015-2017]
