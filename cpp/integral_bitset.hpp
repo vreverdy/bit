@@ -62,8 +62,8 @@ class integral_bitset
 
     // Lifecyle
     public:
-    constexpr integral_bitset(const integral_bitset& other) const;
-    constexpr integral_bitset(integral_bitset&& other) const;
+    constexpr integral_bitset(const integral_bitset& other);
+    constexpr integral_bitset(integral_bitset&& other);
     constexpr integral_bitset(std::initializer_list<value_type> init);
     
 
@@ -139,6 +139,35 @@ class integral_bitset
     void _shrink_to_fit_container(X...);
 };
 /* ************************************************************************** */
+
+
+
+// ----------------------- INTEGRAL BITSET: LIFECYCLE ----------------------- //
+template <std::size_t Min, std::size_t Max, class Container>
+constexpr integral_bitset<Min, Max, Container>::integral_bitset(
+    const integral_bitset& other
+)
+: _container(other._container)
+, _size(other._size)
+{
+}
+
+template <std::size_t Min, std::size_t Max, class Container>
+constexpr integral_bitset<Min, Max, Container>::integral_bitset(
+    integral_bitset&& other
+)
+: _container(std::move(other._container))
+, _size(other._size)
+{
+}
+
+template <std::size_t Min, std::size_t Max, class Container>
+constexpr integral_bitset<Min, Max, Container>::integral_bitset(
+    std::initializer_list<value_type> init
+)
+{
+}
+// -------------------------------------------------------------------------- //
 
 
 
