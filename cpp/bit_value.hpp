@@ -82,6 +82,9 @@ class bit_value
     
     // Bitwise operators
     public:
+    friend constexpr bit_value operator~(
+        bit_value rhs
+    ) noexcept;
     friend constexpr bit_value operator&(
         bit_value lhs, 
         bit_value rhs
@@ -309,7 +312,16 @@ void bit_value::flip(
 
 
 // ---------------------- BIT VALUE: BITWISE OPERATORS ---------------------- //
-// Returns the result of a bitwise and between the right and left hand sides
+// Returns the result of a bitwise not on the right hand side
+constexpr bit_value operator~( 
+    bit_value rhs
+) noexcept
+{
+    using type = unsigned int;
+    return bit_value(static_cast<type>(!rhs._value));
+}
+
+// Returns the result of a bitwise and between the left and right hand sides
 constexpr bit_value operator&(
     bit_value lhs, 
     bit_value rhs
@@ -319,7 +331,7 @@ constexpr bit_value operator&(
     return bit_value(static_cast<type>(lhs._value & rhs._value));
 }
 
-// Returns the result of a bitwise or between the right and left hand sides
+// Returns the result of a bitwise or between the left and right hand sides
 constexpr bit_value operator|(
     bit_value lhs, 
     bit_value rhs
@@ -329,7 +341,7 @@ constexpr bit_value operator|(
     return bit_value(static_cast<type>(lhs._value | rhs._value));
 }
 
-// Returns the result of a bitwise xor between the right and left hand sides
+// Returns the result of a bitwise xor between the left and right hand sides
 constexpr bit_value operator^(
     bit_value lhs, 
     bit_value rhs
@@ -353,7 +365,6 @@ constexpr bool operator==(
 }
 
 // Checks if the left hand side is non equal to the right hand side
-template <class T, class U>
 constexpr bool operator!=(
     bit_value lhs, 
     bit_value rhs
@@ -363,7 +374,6 @@ constexpr bool operator!=(
 }
 
 // Checks if the left hand side is less than the right hand side
-template <class T, class U>
 constexpr bool operator<(
     bit_value lhs, 
     bit_value rhs
@@ -373,7 +383,6 @@ constexpr bool operator<(
 }
 
 // Checks if the left hand side is less than or equal to the right hand side
-template <class T, class U>
 constexpr bool operator<=(
     bit_value lhs, 
     bit_value rhs
@@ -383,7 +392,6 @@ constexpr bool operator<=(
 }
 
 // Checks if the left hand side is greater than the right hand side
-template <class T, class U>
 constexpr bool operator>(
     bit_value lhs, 
     bit_value rhs
@@ -393,7 +401,6 @@ constexpr bool operator>(
 }
 
 // Checks if the left hand side is greater than or equal to the right hand side
-template <class T, class U>
 constexpr bool operator>=(
     bit_value lhs, 
     bit_value rhs
