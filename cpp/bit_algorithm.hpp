@@ -77,18 +77,22 @@ count(
     // Initialization
     difference_type result = 0;
     auto it = first.base();
+    underlying_type first_value = {};
+    underlying_type last_value = {};
     
     // Computation when bits belong to several underlying values
     if (first.base() != last.base()) {
         if (first.position() != 0) {
-            result = _popcnt(*first.base() >> first.position());
+            first_value = *first.base() >> first.position();
+            result = _popcnt(first_value);
             ++it;
         }
         for (; it != last.base(); ++it) {
             result += _popcnt(*it);
         }
         if (last.position() != 0) {
-            result += _popcnt(*last.base() << (digits - last.position()));
+            last_value = *last.base() << (digits - last.position());
+            result += _popcnt(last_value);
         }
     // Computation when bits belong to the same underlying value
     } else {
@@ -193,7 +197,7 @@ void reverse(
     } else {
         *it = _bitblend<underlying_type>(
             *it, 
-            _bitswap(*it >> first.position()) >> gap, 
+            _bitswap<underlying_type>(*it >> first.position()) >> gap, 
             first.position(), 
             last.position() - first.position()
         );
