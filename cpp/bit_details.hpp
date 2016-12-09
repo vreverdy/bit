@@ -88,6 +88,90 @@ struct _cv_iterator_traits
 
 
 
+/* *********** IMPLEMENTATION DETAILS: NARROWEST AND WIDEST TYPES *********** */
+// Narrowest type structure declaration
+template <class... T>
+struct _narrowest_type;
+
+// Narrowest type structure specialization: selects the only passed type
+template <class T>
+struct _narrowest_type<T>
+: std::common_type<T>
+{
+    static_assert(binary_digits<T>::value, "");
+};
+
+// Narrowest type structure specialization: selects the type with less bits
+template <class T, class U>
+struct _narrowest_type<T, U>
+: _narrowest_type<
+    typename std::conditional<
+        (binary_digits<T>::value < binary_digits<U>::value),
+        T,
+        typename std::conditional<
+            (binary_digits<T>::value > binary_digits<U>::value),
+            U,
+            typename std::common_type<T, U>::type
+        >::type
+    >::type
+>
+{
+};
+
+// Narrowest type structure specialization: recursively selects the right type
+template <class T, class... U>
+struct _narrowest_type<T, U...>
+: _narrowest_type<T, typename _narrowest_type<U...>::type>
+{
+};
+
+// Narrowest type alias
+template <class... T>
+using _narrowest_type_t = typename _narrowest_type<T...>::type;
+
+// Widest type structure declaration
+template <class... X>
+struct _widest_type;
+
+// Widest type structure specialization: selects the only passed type
+template <class T>
+struct _widest_type<T>
+: std::common_type<T>
+{
+    static_assert(binary_digits<T>::value, "");
+};
+
+// Widest type structure specialization: selects the type with more bits
+template <class T, class U>
+struct _widest_type<T, U>
+: _widest_type<
+    typename std::conditional<
+        (binary_digits<T>::value > binary_digits<U>::value),
+        T,
+        typename std::conditional<
+            (binary_digits<T>::value < binary_digits<U>::value),
+            U,
+            typename std::common_type<T, U>::type
+        >::type
+    >::type
+>
+{
+};
+
+// Widest type structure specialization: recursively selects the right type
+template <class T, class... X>
+struct _widest_type<T, X...>
+: _widest_type<T, typename _widest_type<X...>::type>
+{
+};
+
+// Widest type alias
+template <class... T>
+using _widest_type_t = typename _widest_type<T...>::type;
+/* ************************************************************************** */
+
+
+
 /* ******************* IMPLEMENTATION DETAILS: UTILITIES ******************** */
 // Assertions
 template <class Iterator>
