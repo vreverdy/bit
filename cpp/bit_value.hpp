@@ -39,19 +39,19 @@ class bit_value
     bit_value() noexcept = default;
     template <class T> 
     constexpr bit_value(bit_reference<T> ref) noexcept;
-    template <class UIntType> 
-    explicit constexpr bit_value(UIntType val) noexcept;
-    template <class UIntType> 
-    constexpr bit_value(UIntType val, size_type pos);
+    template <class WordType> 
+    explicit constexpr bit_value(WordType val) noexcept;
+    template <class WordType> 
+    constexpr bit_value(WordType val, size_type pos);
     
     // Assignment
     public:
     template <class T> 
     bit_value& operator=(bit_reference<T> ref) noexcept;
-    template <class UIntType> 
-    bit_value& assign(UIntType val) noexcept;
-    template <class UIntType> 
-    bit_value& assign(UIntType val, size_type pos);
+    template <class WordType> 
+    bit_value& assign(WordType val) noexcept;
+    template <class WordType> 
+    bit_value& assign(WordType val, size_type pos);
 
     // Bitwise assignment operators
     public:
@@ -152,24 +152,24 @@ constexpr bit_value::bit_value(
 }
     
 // Explicitly constructs an aligned bit value
-template <class UIntType>
+template <class WordType>
 constexpr bit_value::bit_value(
-    UIntType val
+    WordType val
 ) noexcept
 : _value(val & 1)
 {
-    static_assert(binary_digits<UIntType>::value, "");
+    static_assert(binary_digits<WordType>::value, "");
 }
 
 // Explicitly constructs an unaligned bit value
-template <class UIntType> 
+template <class WordType> 
 constexpr bit_value::bit_value(
-    UIntType val, 
+    WordType val, 
     size_type pos
 )
-: _value((assert(pos < binary_digits<UIntType>::value), val >> pos & 1))
+: _value((assert(pos < binary_digits<WordType>::value), val >> pos & 1))
 {
-    static_assert(binary_digits<UIntType>::value, "");
+    static_assert(binary_digits<WordType>::value, "");
 }
 // -------------------------------------------------------------------------- //
 
@@ -187,24 +187,24 @@ bit_value& bit_value::operator=(
 }
 
 // Assigns the aligned bit of a value to the bit value
-template <class UIntType> 
+template <class WordType> 
 bit_value& bit_value::assign(
-    UIntType val
+    WordType val
 ) noexcept
 {
-    static_assert(binary_digits<UIntType>::value, "");
+    static_assert(binary_digits<WordType>::value, "");
     _value = val & 1;
     return *this;
 }
 
 // Assigns an unaligned bit of a value to the bit value
-template <class UIntType> 
+template <class WordType> 
 bit_value& bit_value::assign(
-    UIntType val, 
+    WordType val, 
     size_type pos
 )
 {
-    assert(pos < binary_digits<UIntType>::value);
+    assert(pos < binary_digits<WordType>::value);
     _value = val >> pos & 1;
     return *this;
 }

@@ -36,12 +36,12 @@ class bit_iterator
     // Types
     public:
     using iterator_type = Iterator;
-    using underlying_type = typename _traits_t::value_type;
+    using word_type = typename _traits_t::value_type;
     using iterator_category = typename _traits_t::iterator_category;
     using value_type = bit_value;
     using difference_type = std::ptrdiff_t;
-    using pointer = bit_pointer<underlying_type>;
-    using reference = bit_reference<underlying_type>;
+    using pointer = bit_pointer<word_type>;
+    using reference = bit_reference<word_type>;
     using size_type = std::size_t;
 
     // Lifecycle
@@ -78,7 +78,7 @@ class bit_iterator
     public:
     constexpr iterator_type base() const;
     constexpr size_type position() const noexcept;
-    constexpr underlying_type mask() const noexcept;
+    constexpr word_type mask() const noexcept;
 
     // Implementation details: data members
     private:
@@ -175,7 +175,7 @@ constexpr bit_iterator<Iterator>::bit_iterator(
     size_type pos
 )
 : _current(i)
-, _position((assert(pos < binary_digits<underlying_type>::value), pos))
+, _position((assert(pos < binary_digits<word_type>::value), pos))
 {
 }
 // -------------------------------------------------------------------------- //
@@ -224,7 +224,7 @@ bit_iterator<Iterator>::operator[](
     difference_type n
 ) const
 {
-    constexpr difference_type digits = binary_digits<underlying_type>::value;
+    constexpr difference_type digits = binary_digits<word_type>::value;
     const difference_type sum = _position + n;
     difference_type diff = sum / digits;
     if (sum < 0 && diff * digits != sum) {
@@ -242,7 +242,7 @@ template <class Iterator>
 bit_iterator<Iterator>& bit_iterator<Iterator>::operator++(
 )
 {
-    constexpr size_type digits = binary_digits<underlying_type>::value;
+    constexpr size_type digits = binary_digits<word_type>::value;
     if (_position + 1 < digits) {
         ++_position;
     } else {
@@ -257,7 +257,7 @@ template <class Iterator>
 bit_iterator<Iterator>& bit_iterator<Iterator>::operator--(
 )
 {
-    constexpr size_type digits = binary_digits<underlying_type>::value;
+    constexpr size_type digits = binary_digits<word_type>::value;
     if (_position) {
         --_position;
     } else {
@@ -295,7 +295,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator+(
     difference_type n
 ) const
 {
-    constexpr difference_type digits = binary_digits<underlying_type>::value;
+    constexpr difference_type digits = binary_digits<word_type>::value;
     const difference_type sum = _position + n;
     difference_type diff = sum / digits;
     if (sum < 0 && diff * digits != sum) {
@@ -310,7 +310,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator-(
     difference_type n
 ) const
 {
-    constexpr difference_type digits = binary_digits<underlying_type>::value;
+    constexpr difference_type digits = binary_digits<word_type>::value;
     const difference_type sum = _position - n;
     difference_type diff = sum / digits;
     if (sum < 0 && diff * digits != sum) {
@@ -352,7 +352,7 @@ bit_iterator<Iterator>::base(
     return _current;
 }
 
-// Returns the position of the bit within the underlying object
+// Returns the position of the bit within the underlying word
 template <class Iterator>
 constexpr typename bit_iterator<Iterator>::size_type
 bit_iterator<Iterator>::position(
@@ -363,11 +363,11 @@ bit_iterator<Iterator>::position(
 
 // Returns a mask corresponding to the bit associated with the iterator
 template <class Iterator>
-constexpr typename bit_iterator<Iterator>::underlying_type 
+constexpr typename bit_iterator<Iterator>::word_type 
 bit_iterator<Iterator>::mask(
 ) const noexcept
 {
-    return static_cast<underlying_type>(1) << _position;
+    return static_cast<word_type>(1) << _position;
 }
 // -------------------------------------------------------------------------- //
 
@@ -394,8 +394,8 @@ constexpr typename std::common_type<
     const bit_iterator<U>& rhs
 )
 {
-    using lhs_utype = typename bit_iterator<T>::underlying_type;
-    using rhs_utype = typename bit_iterator<U>::underlying_type;
+    using lhs_utype = typename bit_iterator<T>::word_type;
+    using rhs_utype = typename bit_iterator<U>::word_type;
     using lhs_type = typename bit_iterator<T>::difference_type;
     using rhs_type = typename bit_iterator<U>::difference_type;
     using difference_type = typename std::common_type<lhs_type, rhs_type>::type;

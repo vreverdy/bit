@@ -30,8 +30,8 @@ namespace bit {
 
 /* ***************************** BIT CONSTANTS ****************************** */
 // Bit constants
-static constexpr bit_value bit0(0U);
-static constexpr bit_value bit1(1U);
+constexpr bit_value bit0(0U);
+constexpr bit_value bit1(1U);
 /* ************************************************************************** */
 
 
@@ -70,17 +70,17 @@ count(
     _assert_range_viability(first, last);
     
     // Types and constants
-    using underlying_type = typename bit_iterator<InputIt>::underlying_type;
+    using word_type = typename bit_iterator<InputIt>::word_type;
     using difference_type = typename bit_iterator<InputIt>::difference_type;
-    constexpr difference_type digits = binary_digits<underlying_type>::value;
+    constexpr difference_type digits = binary_digits<word_type>::value;
     
     // Initialization
     difference_type result = 0;
     auto it = first.base();
-    underlying_type first_value = {};
-    underlying_type last_value = {};
+    word_type first_value = {};
+    word_type last_value = {};
     
-    // Computation when bits belong to several underlying values
+    // Computation when bits belong to several underlying words
     if (first.base() != last.base()) {
         if (first.position() != 0) {
             first_value = *first.base() >> first.position();
@@ -94,9 +94,9 @@ count(
             last_value = *last.base() << (digits - last.position());
             result += _popcnt(last_value);
         }
-    // Computation when bits belong to the same underlying value
+    // Computation when bits belong to the same underlying word
     } else {
-        result = _popcnt(_bextr<underlying_type>(
+        result = _popcnt(_bextr<word_type>(
             *first.base(), 
             first.position(), 
             last.position() - first.position()
@@ -127,17 +127,17 @@ void reverse(
     _assert_range_viability(first, last);
     
     // Types and constants
-    using underlying_type = typename bit_iterator<BidirIt>::underlying_type;
+    using word_type = typename bit_iterator<BidirIt>::word_type;
     using size_type = typename bit_iterator<BidirIt>::size_type;
-    constexpr size_type digits = binary_digits<underlying_type>::value;
+    constexpr size_type digits = binary_digits<word_type>::value;
     
     // Initialization
     const bool is_first_aligned = first.position() == 0;
     const bool is_last_aligned = last.position() == 0;
     size_type gap = (digits - last.position()) * !is_last_aligned;
     auto it = first.base();
-    underlying_type first_value = {};
-    underlying_type last_value = {};
+    word_type first_value = {};
+    word_type last_value = {};
     
     // Reverse when bit iterators are aligned
     if (is_first_aligned && is_last_aligned) {
@@ -145,7 +145,7 @@ void reverse(
         for (; it !=  last.base(); ++it) {
             *it = _bitswap(*it);
         }
-    // Reverse when bit iterators do not belong to the same underlying value
+    // Reverse when bit iterators do not belong to the same underlying word
     } else if (first.base() != last.base()) {
         // Save first and last element
         first_value = *first.base();
@@ -157,7 +157,7 @@ void reverse(
             it = first.base();
             gap = gap - first.position();
             for (; it != last.base(); ++it) {
-                *it = _shld<underlying_type>(*it, *std::next(it), gap);
+                *it = _shld<word_type>(*it, *std::next(it), gap);
             }
             *it <<= gap;
             it = first.base();
@@ -166,7 +166,7 @@ void reverse(
             it = std::prev(last.base(), is_last_aligned);
             gap = first.position() - gap;
             for (; it != first.base(); --it) {
-                *it = _shrd<underlying_type>(*it, *std::prev(it), gap);
+                *it = _shrd<word_type>(*it, *std::prev(it), gap);
             }
             *it >>= gap; 
             it = first.base();
@@ -177,7 +177,7 @@ void reverse(
         }
         // Blend bits of the first element
         if (!is_first_aligned) {
-            *first.base() = _bitblend<underlying_type>(
+            *first.base() = _bitblend<word_type>(
                 first_value,
                 *first.base(),
                 first.position(),
@@ -186,18 +186,18 @@ void reverse(
         }
         // Blend bits of the last element
         if (!is_last_aligned) {
-            *last.base() = _bitblend<underlying_type>(
+            *last.base() = _bitblend<word_type>(
                 *last.base(),
                 last_value,
                 last.position(),
                 digits - last.position()
             );
         }
-    // Reverse when bit iterators belong to the same underlying value
+    // Reverse when bit iterators belong to the same underlying word
     } else {
-        *it = _bitblend<underlying_type>(
+        *it = _bitblend<word_type>(
             *it, 
-            _bitswap<underlying_type>(*it >> first.position()) >> gap, 
+            _bitswap<word_type>(*it >> first.position()) >> gap, 
             first.position(), 
             last.position() - first.position()
         );

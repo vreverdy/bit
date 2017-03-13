@@ -25,18 +25,18 @@ namespace bit {
 
 /* ****************************** BIT POINTER ******************************* */
 // Bit pointer class definition
-template <class UIntType>
+template <class WordType>
 class bit_pointer
 {
     // Assertions
-    static_assert(binary_digits<UIntType>::value, "");
+    static_assert(binary_digits<WordType>::value, "");
     
     // Friendship
     template <class> friend class bit_pointer;
     
     // Types
     public:
-    using underlying_type = UIntType;
+    using word_type = WordType;
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
 
@@ -46,8 +46,8 @@ class bit_pointer
     template <class T> 
     constexpr bit_pointer(const bit_pointer<T>& other) noexcept;
     constexpr bit_pointer(std::nullptr_t) noexcept;
-    explicit constexpr bit_pointer(underlying_type* ptr) noexcept;
-    constexpr bit_pointer(underlying_type* ptr, size_type pos);
+    explicit constexpr bit_pointer(word_type* ptr) noexcept;
+    constexpr bit_pointer(word_type* ptr, size_type pos);
     
     // Assignment
     public:
@@ -62,9 +62,9 @@ class bit_pointer
 
     // Access
     public:
-    constexpr bit_reference<UIntType> operator*() const noexcept;
-    constexpr bit_reference<UIntType>* operator->() const noexcept;
-    constexpr bit_reference<UIntType> operator[](difference_type n) const;
+    constexpr bit_reference<WordType> operator*() const noexcept;
+    constexpr bit_reference<WordType>* operator->() const noexcept;
+    constexpr bit_reference<WordType> operator[](difference_type n) const;
     
     // Increment and decrement operators
     public:
@@ -79,7 +79,7 @@ class bit_pointer
 
     // Implementation details: data members
     private:
-    bit_reference<UIntType> _ref;
+    bit_reference<WordType> _ref;
 
     // Non-member arithmetic operators
     template <class T>
@@ -134,9 +134,9 @@ class bit_pointer
 
 // ------------------------- BIT POINTER: LIFECYCLE ------------------------- //
 // Implicitly constructs a bit pointer from another bit pointer
-template <class UIntType>
+template <class WordType>
 template <class T> 
-constexpr bit_pointer<UIntType>::bit_pointer(
+constexpr bit_pointer<WordType>::bit_pointer(
     const bit_pointer<T>& other
 ) noexcept
 : _ref(other._ref)
@@ -144,8 +144,8 @@ constexpr bit_pointer<UIntType>::bit_pointer(
 }
 
 // Explicitly constructs a bit pointer from a null pointer
-template <class UIntType>
-constexpr bit_pointer<UIntType>::bit_pointer(
+template <class WordType>
+constexpr bit_pointer<WordType>::bit_pointer(
     std::nullptr_t
 ) noexcept
 : _ref(nullptr)
@@ -153,18 +153,18 @@ constexpr bit_pointer<UIntType>::bit_pointer(
 }
 
 // Explicitly constructs an aligned bit pointer from a pointer
-template <class UIntType>
-constexpr bit_pointer<UIntType>::bit_pointer(
-    underlying_type* ptr
+template <class WordType>
+constexpr bit_pointer<WordType>::bit_pointer(
+    word_type* ptr
 ) noexcept
 : _ref(ptr)
 {
 }
 
 // Explicitly constructs an unaligned bit pointer from a pointer
-template <class UIntType>
-constexpr bit_pointer<UIntType>::bit_pointer(
-    underlying_type* ptr, 
+template <class WordType>
+constexpr bit_pointer<WordType>::bit_pointer(
+    word_type* ptr, 
     size_type pos
 )
 : _ref(ptr, pos)
@@ -176,8 +176,8 @@ constexpr bit_pointer<UIntType>::bit_pointer(
 
 // ------------------------ BIT POINTER: ASSIGNMENT ------------------------- //
 // Assigns a null pointer to the bit pointer
-template <class UIntType>
-bit_pointer<UIntType>& bit_pointer<UIntType>::operator=(
+template <class WordType>
+bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     std::nullptr_t
 ) noexcept
 {
@@ -187,8 +187,8 @@ bit_pointer<UIntType>& bit_pointer<UIntType>::operator=(
 }
 
 // Copies a bit pointer to the bit pointer
-template <class UIntType>
-bit_pointer<UIntType>& bit_pointer<UIntType>::operator=(
+template <class WordType>
+bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     const bit_pointer& other
 ) noexcept
 {
@@ -198,9 +198,9 @@ bit_pointer<UIntType>& bit_pointer<UIntType>::operator=(
 }
 
 // Assigns a bit pointer to the bit pointer
-template <class UIntType>
+template <class WordType>
 template <class T> 
-bit_pointer<UIntType>& bit_pointer<UIntType>::operator=(
+bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     const bit_pointer<T>& other
 ) noexcept
 {
@@ -214,8 +214,8 @@ bit_pointer<UIntType>& bit_pointer<UIntType>::operator=(
 
 // ------------------------ BIT POINTER: CONVERSION ------------------------- //
 // Returns true if the bit pointer is null, false otherwise
-template <class UIntType>
-constexpr bit_pointer<UIntType>::operator bool(
+template <class WordType>
+constexpr bit_pointer<WordType>::operator bool(
 ) const noexcept
 {
     return _ref._ptr;
@@ -226,34 +226,34 @@ constexpr bit_pointer<UIntType>::operator bool(
 
 // -------------------------- BIT POINTER: ACCESS --------------------------- //
 // Gets a bit reference from the bit pointer
-template <class UIntType>
-constexpr bit_reference<UIntType> bit_pointer<UIntType>::operator*(
+template <class WordType>
+constexpr bit_reference<WordType> bit_pointer<WordType>::operator*(
 ) const noexcept
 {
     return _ref;
 }
 
 // Gets a pointer to a bit reference
-template <class UIntType>
-constexpr bit_reference<UIntType>* bit_pointer<UIntType>::operator->(
+template <class WordType>
+constexpr bit_reference<WordType>* bit_pointer<WordType>::operator->(
 ) const noexcept
 {
-    return std::addressof(const_cast<bit_reference<UIntType>&>(_ref));
+    return std::addressof(const_cast<bit_reference<WordType>&>(_ref));
 }
 
 // Gets a bit reference, decrementing or incrementing the pointer
-template <class UIntType>
-constexpr bit_reference<UIntType> bit_pointer<UIntType>::operator[](
+template <class WordType>
+constexpr bit_reference<WordType> bit_pointer<WordType>::operator[](
     difference_type n
 ) const
 {
-    constexpr difference_type digits = binary_digits<underlying_type>::value;
+    constexpr difference_type digits = binary_digits<word_type>::value;
     const difference_type sum = _ref.position() + n;
     difference_type diff = sum / digits;
     if (sum < 0 && diff * digits != sum) {
         --diff;
     }
-    return bit_reference<UIntType>(_ref._ptr + diff, sum - diff * digits);
+    return bit_reference<WordType>(_ref._ptr + diff, sum - diff * digits);
 }
 // -------------------------------------------------------------------------- //
 
@@ -261,12 +261,12 @@ constexpr bit_reference<UIntType> bit_pointer<UIntType>::operator[](
 
 // ------------- BIT POINTER: INCREMENT AND DECREMENT OPERATORS ------------- //
 // Increments the bit pointer and returns it
-template <class UIntType>
-bit_pointer<UIntType>& bit_pointer<UIntType>::operator++(
+template <class WordType>
+bit_pointer<WordType>& bit_pointer<WordType>::operator++(
 )
 {
-    using type = typename std::remove_cv<underlying_type>::type;
-    constexpr size_type digits = binary_digits<underlying_type>::value;
+    using type = typename std::remove_cv<word_type>::type;
+    constexpr size_type digits = binary_digits<word_type>::value;
     constexpr type one = 1;
     constexpr type mask = one; 
     const size_type pos = _ref.position();
@@ -280,12 +280,12 @@ bit_pointer<UIntType>& bit_pointer<UIntType>::operator++(
 }
 
 // Decrements the bit pointer and returns it
-template <class UIntType>
-bit_pointer<UIntType>& bit_pointer<UIntType>::operator--(
+template <class WordType>
+bit_pointer<WordType>& bit_pointer<WordType>::operator--(
 )
 {
-    using type = typename std::remove_cv<underlying_type>::type;
-    constexpr size_type digits = binary_digits<underlying_type>::value;
+    using type = typename std::remove_cv<word_type>::type;
+    constexpr size_type digits = binary_digits<word_type>::value;
     constexpr type one = 1;
     constexpr type mask = static_cast<type>(one << (digits - 1)); 
     const size_type pos = _ref.position();
@@ -299,8 +299,8 @@ bit_pointer<UIntType>& bit_pointer<UIntType>::operator--(
 }
 
 // Increments the bit pointer and returns the old one
-template <class UIntType>
-bit_pointer<UIntType> bit_pointer<UIntType>::operator++(
+template <class WordType>
+bit_pointer<WordType> bit_pointer<WordType>::operator++(
     int
 )
 {
@@ -310,8 +310,8 @@ bit_pointer<UIntType> bit_pointer<UIntType>::operator++(
 }
 
 // Decrements the bit pointer and returns the old one
-template <class UIntType>
-bit_pointer<UIntType> bit_pointer<UIntType>::operator--(
+template <class WordType>
+bit_pointer<WordType> bit_pointer<WordType>::operator--(
     int
 )
 {
@@ -321,12 +321,12 @@ bit_pointer<UIntType> bit_pointer<UIntType>::operator--(
 }
 
 // Looks forward several bits and gets a pointer at this position
-template <class UIntType>
-constexpr bit_pointer<UIntType> bit_pointer<UIntType>::operator+(
+template <class WordType>
+constexpr bit_pointer<WordType> bit_pointer<WordType>::operator+(
     difference_type n
 ) const
 {
-    constexpr difference_type digits = binary_digits<underlying_type>::value;
+    constexpr difference_type digits = binary_digits<word_type>::value;
     const difference_type sum = _ref.position() + n;
     difference_type diff = sum / digits;
     if (sum < 0 && diff * digits != sum) {
@@ -336,12 +336,12 @@ constexpr bit_pointer<UIntType> bit_pointer<UIntType>::operator+(
 }
 
 // Looks backward several bits and gets a pointer at this position
-template <class UIntType>
-constexpr bit_pointer<UIntType> bit_pointer<UIntType>::operator-(
+template <class WordType>
+constexpr bit_pointer<WordType> bit_pointer<WordType>::operator-(
     difference_type n
 ) const
 {
-    constexpr difference_type digits = binary_digits<underlying_type>::value;
+    constexpr difference_type digits = binary_digits<word_type>::value;
     const difference_type sum = _ref.position() - n;
     difference_type diff = sum / digits;
     if (sum < 0 && diff * digits != sum) {
@@ -351,8 +351,8 @@ constexpr bit_pointer<UIntType> bit_pointer<UIntType>::operator-(
 }
 
 // Increments the pointer by several bits and returns it
-template <class UIntType>
-bit_pointer<UIntType>& bit_pointer<UIntType>::operator+=(
+template <class WordType>
+bit_pointer<WordType>& bit_pointer<WordType>::operator+=(
     difference_type n
 )
 {
@@ -361,8 +361,8 @@ bit_pointer<UIntType>& bit_pointer<UIntType>::operator+=(
 }
 
 // Decrements the pointer by several bits and returns it
-template <class UIntType>
-bit_pointer<UIntType>& bit_pointer<UIntType>::operator-=(
+template <class WordType>
+bit_pointer<WordType>& bit_pointer<WordType>::operator-=(
     difference_type n
 )
 {

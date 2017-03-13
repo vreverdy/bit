@@ -28,8 +28,8 @@
 // Miscellaneous
 namespace bit {
 class bit_value;
-template <class UIntType> class bit_reference;
-template <class UIntType> class bit_pointer;
+template <class WordType> class bit_reference;
+template <class WordType> class bit_pointer;
 template <class Iterator> class bit_iterator;
 // ========================================================================== //
 
