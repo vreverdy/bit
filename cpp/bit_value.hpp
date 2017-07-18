@@ -36,7 +36,7 @@ class bit_value
     
     // Lifecycle
     public:
-    bit_value() noexcept = default;
+    constexpr bit_value() noexcept;
     template <class T> 
     constexpr bit_value(bit_reference<T> ref) noexcept;
     template <class WordType> 
@@ -47,17 +47,17 @@ class bit_value
     // Assignment
     public:
     template <class T> 
-    bit_value& operator=(bit_reference<T> ref) noexcept;
+    constexpr bit_value& operator=(bit_reference<T> ref) noexcept;
     template <class WordType> 
-    bit_value& assign(WordType val) noexcept;
+    constexpr bit_value& assign(WordType val) noexcept;
     template <class WordType> 
-    bit_value& assign(WordType val, size_type pos);
+    constexpr bit_value& assign(WordType val, size_type pos);
 
     // Bitwise assignment operators
     public:
-    bit_value& operator&=(bit_value other) noexcept;
-    bit_value& operator|=(bit_value other) noexcept;
-    bit_value& operator^=(bit_value other) noexcept;
+    constexpr bit_value& operator&=(bit_value other) noexcept;
+    constexpr bit_value& operator|=(bit_value other) noexcept;
+    constexpr bit_value& operator^=(bit_value other) noexcept;
 
     // Conversion
     public:
@@ -65,16 +65,16 @@ class bit_value
     
     // Swap members
     public:
-    void swap(bit_value& other);
+    void swap(bit_value& other) noexcept;
     template <class T> 
-    void swap(bit_reference<T> other);
+    void swap(bit_reference<T> other) noexcept;
 
     // Bit manipulation
     public:
-    void set(bool b) noexcept;
-    void set() noexcept;
-    void reset() noexcept;
-    void flip() noexcept;
+    constexpr bit_value& set(bool b) noexcept;
+    constexpr bit_value& set() noexcept;
+    constexpr bit_value& reset() noexcept;
+    constexpr bit_value& flip() noexcept;
 
     // Implementation details: data members
     private:
@@ -137,11 +137,20 @@ std::basic_ostream<CharT, Traits>& operator<<(
     std::basic_ostream<CharT, Traits>& os,
     bit_value x
 );
+
+// Constants
 /* ************************************************************************** */
 
 
 
 // -------------------------- BIT VALUE: LIFECYCLE -------------------------- //
+// Implicitly default constructs a bit value initialized to zero
+constexpr bit_value::bit_value(
+) noexcept
+: _value(false)
+{
+}
+
 // Implicitly constructs a bit value from a bit reference
 template <class T> 
 constexpr bit_value::bit_value(
@@ -178,7 +187,7 @@ constexpr bit_value::bit_value(
 // ------------------------- BIT VALUE: ASSIGNMENT -------------------------- //
 // Assigns a bit reference to the bit value
 template <class T> 
-bit_value& bit_value::operator=(
+constexpr bit_value& bit_value::operator=(
     bit_reference<T> ref
 ) noexcept
 {
@@ -188,7 +197,7 @@ bit_value& bit_value::operator=(
 
 // Assigns the aligned bit of a value to the bit value
 template <class WordType> 
-bit_value& bit_value::assign(
+constexpr bit_value& bit_value::assign(
     WordType val
 ) noexcept
 {
@@ -199,7 +208,7 @@ bit_value& bit_value::assign(
 
 // Assigns an unaligned bit of a value to the bit value
 template <class WordType> 
-bit_value& bit_value::assign(
+constexpr bit_value& bit_value::assign(
     WordType val, 
     size_type pos
 )
@@ -214,7 +223,7 @@ bit_value& bit_value::assign(
 
 // ---------------- BIT VALUE: BITWISE ASSIGNMENT OPERATORS ----------------- //
 // Assigns the value of the bit through a bitwise and operation
-bit_value& bit_value::operator&=(
+constexpr bit_value& bit_value::operator&=(
     bit_value other
 ) noexcept
 {
@@ -223,7 +232,7 @@ bit_value& bit_value::operator&=(
 }
 
 // Assigns the value of the bit through a bitwise or operation
-bit_value& bit_value::operator|=(
+constexpr bit_value& bit_value::operator|=(
     bit_value other
 ) noexcept
 {
@@ -232,7 +241,7 @@ bit_value& bit_value::operator|=(
 }
 
 // Assigns the value of the bit through a bitwise xor operation
-bit_value& bit_value::operator^=(
+constexpr bit_value& bit_value::operator^=(
     bit_value other
 ) noexcept
 {
@@ -258,7 +267,7 @@ constexpr bit_value::operator bool(
 // Swaps the bit value with another bit value
 void bit_value::swap(
     bit_value& other
-)
+) noexcept
 {
     std::swap(*this, other);
 }
@@ -267,7 +276,7 @@ void bit_value::swap(
 template <class T>
 void bit_value::swap(
     bit_reference<T> other
-)
+) noexcept
 {
     if (other != _value) {
         flip();
@@ -280,32 +289,36 @@ void bit_value::swap(
 
 // ---------------------- BIT VALUE: BIT MANIPULATION ----------------------- //
 // Sets the value of the bit to the provided boolean value
-void bit_value::set(
+constexpr bit_value& bit_value::set(
     bool b
 ) noexcept
 {
     _value = b;
+    return *this;
 }
 
 // Sets the value of the bit to 1
-void bit_value::set(
+constexpr bit_value& bit_value::set(
 ) noexcept
 {
     _value = true;
+    return *this;
 }
 
 // Resets the value of the bit to 0
-void bit_value::reset(
+constexpr bit_value& bit_value::reset(
 ) noexcept
 {
     _value = false;
+    return *this;
 }
 
 // Flips the value of the bit
-void bit_value::flip(
+constexpr bit_value& bit_value::flip(
 ) noexcept
 {
     _value = !_value;
+    return *this;
 }
 // -------------------------------------------------------------------------- //
 
@@ -476,6 +489,16 @@ std::basic_ostream<CharT, Traits>& operator<<(
     constexpr char one = '1';
     return os << os.widen(x ? one : zero);
 }
+// -------------------------------------------------------------------------- //
+
+
+
+// -------------------------- BIT VALUE: CONSTANTS -------------------------- //
+// Constant bit values
+constexpr bit_value bit_off(0U);
+constexpr bit_value bit_on(1U);
+constexpr bit_value bit0(0U);
+constexpr bit_value bit1(1U);
 // -------------------------------------------------------------------------- //
 
 

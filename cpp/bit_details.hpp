@@ -207,15 +207,15 @@ constexpr T _bextr(T src, T start, T len, X...) noexcept;
 
 // Parallel bits deposit
 template <class T, class = decltype(_pdep_u64(T()))>
-constexpr T _pdep(T src, T mask) noexcept;
+constexpr T _pdep(T src, T msk) noexcept;
 template <class T, class... X>
-constexpr T _pdep(T src, T mask, X...) noexcept;
+constexpr T _pdep(T src, T msk, X...) noexcept;
 
 // Parallel bits extract
 template <class T, class = decltype(_pext_u64(T()))>
-constexpr T _pext(T src, T mask) noexcept;
+constexpr T _pext(T src, T msk) noexcept;
 template <class T, class... X>
-constexpr T _pext(T src, T mask, X...) noexcept;
+constexpr T _pext(T src, T msk, X...) noexcept;
 
 // Byte swap
 template <class T, class T128 = decltype(__uint128_t(__builtin_bswap64(T())))>
@@ -233,7 +233,7 @@ constexpr T _bitswap() noexcept;
 
 // Bit blend
 template <class T>
-constexpr T _bitblend(T src0, T src1, T mask) noexcept;
+constexpr T _bitblend(T src0, T src1, T msk) noexcept;
 template <class T>
 constexpr T _bitblend(T src0, T src1, T start, T len) noexcept;
 
@@ -243,11 +243,19 @@ constexpr T _bitcmp(T src0, T src1, T start0, T start1, T len) noexcept;
 
 // Double precision shift left
 template <class T>
-constexpr T _shld(T dest, T src, T count) noexcept;
+constexpr T _shld(T dst, T src, T cnt) noexcept;
 
 // Double precision shift right
 template <class T>
-constexpr T _shrd(T dest, T src, T count) noexcept;
+constexpr T _shrd(T dst, T src, T cnt) noexcept;
+
+// Add carry
+template <class... T>
+using _supports_addcarry = decltype(__builtin_ia32_addcarryx_u64(T()...));
+template <class C, class T, class = _supports_addcarry<C, T, T, std::nullptr_t>>
+constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept;
+template <class C, class T, class... X>
+constexpr C _addcarry(C carry, T src0, T src1, T* dst, X...) noexcept;
 /* ************************************************************************** */
 
 
@@ -293,11 +301,11 @@ template <class T, class... X>
 constexpr T _popcnt(T src, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
-    T dest = 0;
-    for (dest = 0; src; src >>= 1) {
-        dest += src & 1;
+    T dst = T();
+    for (dst = T(); src; src >>= 1) {
+        dst += src & 1;
     }
-    return dest;
+    return dst;
 }
 // -------------------------------------------------------------------------- //
 
@@ -310,32 +318,32 @@ constexpr T _lzcnt(T src) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    T dest = 0;
+    T dst = T();
     if (digits < std::numeric_limits<unsigned int>::digits) {
-        dest = src ? __builtin_clz(src)
+        dst = src ? __builtin_clz(src)
                      - (std::numeric_limits<unsigned int>::digits 
                      - digits)
                    : digits;
     } else if (digits == std::numeric_limits<unsigned int>::digits) {
-        dest = src ? __builtin_clz(src) : digits;
+        dst = src ? __builtin_clz(src) : digits;
     } else if (digits < std::numeric_limits<unsigned long int>::digits) {
-        dest = src ? __builtin_clzl(src)
+        dst = src ? __builtin_clzl(src)
                      - (std::numeric_limits<unsigned long int>::digits 
                      - digits)
                    : digits;
     } else if (digits == std::numeric_limits<unsigned long int>::digits) {
-        dest = src ? __builtin_clzl(src) : digits;
+        dst = src ? __builtin_clzl(src) : digits;
     } else if (digits < std::numeric_limits<unsigned long long int>::digits) {
-        dest = src ? __builtin_clzll(src)
+        dst = src ? __builtin_clzll(src)
                      - (std::numeric_limits<unsigned long long int>::digits 
                      - digits)
                    : digits;
     } else if (digits == std::numeric_limits<unsigned long long int>::digits) {
-        dest = src ? __builtin_clzll(src) : digits;
+        dst = src ? __builtin_clzll(src) : digits;
     } else {
-        dest = _lzcnt(src, std::ignore);
+        dst = _lzcnt(src, std::ignore);
     }
-    return dest;
+    return dst;
 }
 
 // Counts the number of leading zeros without compiler intrinsics
@@ -344,11 +352,11 @@ constexpr T _lzcnt(T src, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    T dest = src != 0;
+    T dst = src != T();
     while (src >>= 1) {
-        ++dest;
+        ++dst;
     }
-    return digits - dest;
+    return digits - dst;
 }
 // -------------------------------------------------------------------------- //
 
@@ -361,17 +369,17 @@ constexpr T _tzcnt(T src) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    T dest = 0;
+    T dst = T();
     if (digits <= std::numeric_limits<unsigned int>::digits) {
-        dest = src ? __builtin_ctz(src) : digits; 
+        dst = src ? __builtin_ctz(src) : digits; 
     } else if (digits <= std::numeric_limits<unsigned long int>::digits) {
-        dest = src ? __builtin_ctzl(src) : digits; 
+        dst = src ? __builtin_ctzl(src) : digits; 
     } else if (digits <= std::numeric_limits<unsigned long long int>::digits) {
-        dest = src ? __builtin_ctzll(src) : digits; 
+        dst = src ? __builtin_ctzll(src) : digits; 
     } else {
-        dest = _tzcnt(src, std::ignore);
+        dst = _tzcnt(src, std::ignore);
     }
-    return dest;
+    return dst;
 }
 
 // Counts the number of trailing zeros without compiler intrinsics
@@ -380,14 +388,14 @@ constexpr T _tzcnt(T src, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    T dest = digits;
+    T dst = digits;
     if (src) {
         src = (src ^ (src - 1)) >> 1;
-        for (dest = 0; src; dest++) {
+        for (dst = T(); src; dst++) {
             src >>= 1;
         }
     }
-    return dest;
+    return dst;
 }
 // -------------------------------------------------------------------------- //
 
@@ -400,15 +408,15 @@ constexpr T _bextr(T src, T start, T len) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    T dest = 0;
+    T dst = T();
     if (digits <= std::numeric_limits<unsigned int>::digits) {
-        dest = __builtin_ia32_bextr_u32(src, start, len); 
+        dst = __builtin_ia32_bextr_u32(src, start, len); 
     } else if (digits <= std::numeric_limits<unsigned long long int>::digits) {
-        dest = __builtin_ia32_bextr_u64(src, start, len);
+        dst = __builtin_ia32_bextr_u64(src, start, len);
     } else {
-        dest = _bextr(src, start, len, std::ignore);
+        dst = _bextr(src, start, len, std::ignore);
     }
-    return dest;
+    return dst;
 }
 
 // Extacts to lsbs a field of contiguous bits without compiler intrinsics
@@ -418,8 +426,8 @@ constexpr T _bextr(T src, T start, T len, X...) noexcept
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
     constexpr T one = 1;
-    const T mask = (one << len) * (len < digits) - one;
-    return (src >> start) & mask * (start < digits);
+    const T msk = (one << len) * (len < digits) - one;
+    return (src >> start) & msk * (start < digits);
 }
 // -------------------------------------------------------------------------- //
 
@@ -428,40 +436,40 @@ constexpr T _bextr(T src, T start, T len, X...) noexcept
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: PARALLEL BIT DEPOSIT ------- //
 // Deposits bits according to a mask with compiler instrinsics
 template <class T, class>
-constexpr T _pdep(T src, T mask) noexcept
+constexpr T _pdep(T src, T msk) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    T dest = 0;
+    T dst = T();
     if (digits <= std::numeric_limits<unsigned int>::digits) {
-        dest = _pdep_u32(src, mask); 
+        dst = _pdep_u32(src, msk); 
     } else if (digits <= std::numeric_limits<unsigned long long int>::digits) {
-        dest = _pdep_u64(src, mask);
+        dst = _pdep_u64(src, msk);
     } else {
-        dest = _pdep(src, mask, std::ignore);
+        dst = _pdep(src, msk, std::ignore);
     }
-    return dest;
+    return dst;
 }
 
 // Deposits bits according to a mask without compiler instrinsics
 template <class T, class... X>
-constexpr T _pdep(T src, T mask, X...) noexcept
+constexpr T _pdep(T src, T msk, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    T dest = 0;
-    T count = 0;
-    while (mask) {
-        dest >>= 1;
-        if (mask & 1) {
-            dest |= src << (digits - 1);
+    T dst = T();
+    T cnt = T();
+    while (msk) {
+        dst >>= 1;
+        if (msk & 1) {
+            dst |= src << (digits - 1);
             src >>= 1;
         }
-        mask >>= 1;
-        ++count;
+        msk >>= 1;
+        ++cnt;
     }
-    dest >>= (digits - count) * (count > 0);
-    return dest;
+    dst >>= (digits - cnt) * (cnt > 0);
+    return dst;
 }
 // -------------------------------------------------------------------------- //
 
@@ -470,40 +478,40 @@ constexpr T _pdep(T src, T mask, X...) noexcept
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: PARALLEL BIT EXTRACT ------- //
 // Extracts bits according to a mask with compiler instrinsics
 template <class T, class>
-constexpr T _pext(T src, T mask) noexcept
+constexpr T _pext(T src, T msk) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    T dest = 0;
+    T dst = T();
     if (digits <= std::numeric_limits<unsigned int>::digits) {
-        dest = _pext_u32(src, mask); 
+        dst = _pext_u32(src, msk); 
     } else if (digits <= std::numeric_limits<unsigned long long int>::digits) {
-        dest = _pext_u64(src, mask);
+        dst = _pext_u64(src, msk);
     } else {
-        dest = _pext(src, mask, std::ignore);
+        dst = _pext(src, msk, std::ignore);
     }
-    return dest;
+    return dst;
 }
 
 // Extracts bits according to a mask without compiler instrinsics
 template <class T, class... X>
-constexpr T _pext(T src, T mask, X...) noexcept
+constexpr T _pext(T src, T msk, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    T dest = 0;
-    T count = 0;
-    while (mask) {
-        if (mask & 1) {
-            dest >>= 1;
-            dest |= src << (digits - 1);
-            ++count;
+    T dst = T();
+    T cnt = T();
+    while (msk) {
+        if (msk & 1) {
+            dst >>= 1;
+            dst |= src << (digits - 1);
+            ++cnt;
         }
         src >>= 1;
-        mask >>= 1;
+        msk >>= 1;
     }
-    dest >>= (digits - count) * (count > 0);
-    return dest;
+    dst >>= (digits - cnt) * (cnt > 0);
+    return dst;
 }
 // -------------------------------------------------------------------------- //
 
@@ -546,7 +554,7 @@ constexpr T _byteswap(T src, X...) noexcept
     constexpr T end = sizeof(T) - 1;
     unsigned char* bytes = reinterpret_cast<byte_t*>(&src);
     unsigned char byte = 0;
-    for (T i = 0; i < half; ++i) {
+    for (T i = T(); i < half; ++i) {
         byte = bytes[i];
         bytes[i] = bytes[end - i];
         bytes[end - i] = byte;
@@ -574,21 +582,21 @@ constexpr T _bitswap(T src) noexcept
     constexpr bool is_byte = digits == std::numeric_limits<byte_t>::digits;
     constexpr bool is_octet = std::numeric_limits<byte_t>::digits == 8;
     constexpr bool is_pow2 = _popcnt(digits, ignore) == 1;
-    T dest = src;
+    T dst = src;
     T i = digits - 1;
     if (is_size1 && is_byte && is_octet) {
-        dest = ((src * first) & second) * third >> fourth;
+        dst = ((src * first) & second) * third >> fourth;
     } else if (is_pow2) {
-        dest = _bitswap<T, digits>(src);
+        dst = _bitswap<T, digits>(src);
     } else {
         for (src >>= 1; src; src >>= 1) {   
-            dest <<= 1;
-            dest |= src & 1;
+            dst <<= 1;
+            dst |= src & 1;
             i--;
         }
-        dest <<= i;
+        dst <<= i;
     }
-    return dest;
+    return dst;
 }
 
 // Reverses the order of the bits: recursive metafunction
@@ -596,10 +604,10 @@ template <class T, std::size_t N>
 constexpr T _bitswap(T src) noexcept
 {
     static_assert(binary_digits<T>::value, "");
-    constexpr T count = N >> 1;
-    constexpr T mask = _bitswap<T, count>();
-    src = ((src >> count) & mask) | ((src << count) & ~mask);
-    return count > 1 ? _bitswap<T, count>(src) : src;
+    constexpr T cnt = N >> 1;
+    constexpr T msk = _bitswap<T, cnt>();
+    src = ((src >> cnt) & msk) | ((src << cnt) & ~msk);
+    return cnt > 1 ? _bitswap<T, cnt>(src) : src;
 }
 
 // Reverses the order of the bits: mask for the recursive metafunction
@@ -608,13 +616,13 @@ constexpr T _bitswap() noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    T count = digits;
-    T mask = ~T();
-    while (count != N) {
-        count >>= 1;
-        mask ^= (mask << count);
+    T cnt = digits;
+    T msk = ~T();
+    while (cnt != N) {
+        cnt >>= 1;
+        msk ^= (msk << cnt);
     }
-    return mask;
+    return msk;
 }
 // -------------------------------------------------------------------------- //
 
@@ -623,10 +631,10 @@ constexpr T _bitswap() noexcept
 // ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT BLEND ------------- //
 // Replaces len bits of src0 by the ones of src1 where the mask is true
 template <class T>
-constexpr T _bitblend(T src0, T src1, T mask) noexcept
+constexpr T _bitblend(T src0, T src1, T msk) noexcept
 {
     static_assert(binary_digits<T>::value, "");
-    return src0 ^ ((src0 ^ src1) & mask);
+    return src0 ^ ((src0 ^ src1) & msk);
 }
 
 // Replaces len bits of src0 by the ones of src1 starting at start
@@ -636,8 +644,8 @@ constexpr T _bitblend(T src0, T src1, T start, T len) noexcept
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
     constexpr T one = 1;
-    const T mask = ((one << len) * (len < digits) - one) << start;
-    return src0 ^ ((src0 ^ src1) & mask * (start < digits));
+    const T msk = ((one << len) * (len < digits) - one) << start;
+    return src0 ^ ((src0 ^ src1) & msk * (start < digits));
 }
 // -------------------------------------------------------------------------- //
 
@@ -656,37 +664,78 @@ constexpr T _bitcmp(T src0, T src1, T start0, T start1, T len) noexcept
 
 
 // --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT LEFT ---- //
-// Left shifts dest by count bits, filling the lsbs of dest by the msbs of src
+// Left shifts dst by cnt bits, filling the lsbs of dst by the msbs of src
 template <class T>
-constexpr T _shld(T dest, T src, T count) noexcept
+constexpr T _shld(T dst, T src, T cnt) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    if (count < digits) {
-        dest = (dest << count) | (src >> (digits - count));
+    if (cnt < digits) {
+        dst = (dst << cnt) | (src >> (digits - cnt));
     } else {
-        dest = (src << (count - digits)) * (count < digits + digits);
+        dst = (src << (cnt - digits)) * (cnt < digits + digits);
     }
-    return dest;
+    return dst;
 }
 // -------------------------------------------------------------------------- //
 
 
 
 // --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT RIGHT --- //
-// Right shifts dest by count bits, filling the msbs of dest by the lsbs of src
+// Right shifts dst by cnt bits, filling the msbs of dst by the lsbs of src
 template <class T>
-constexpr T _shrd(T dest, T src, T count) noexcept
+constexpr T _shrd(T dst, T src, T cnt) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
-    if (count < digits) {
-        dest = (dest >> count) | (src << (digits - count));
+    if (cnt < digits) {
+        dst = (dst >> cnt) | (src << (digits - cnt));
     } else {
-        dest = (src >> (count - digits)) * (count < digits + digits);
+        dst = (src >> (cnt - digits)) * (cnt < digits + digits);
     }
-    return dest;
+    return dst;
 }
+// -------------------------------------------------------------------------- //
+
+
+
+// ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: ADD CARRY ------------- //
+/*
+// Adds src0 and src1 and returns the new carry bit with compiler intrinsics
+template <class C, class T, class>
+constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept
+{
+    static_assert(binary_digits<T>::value, "");
+    constexpr T digits = binary_digits<T>::value;
+    unsigned char uhhdst = 0;
+    unsigned short int uhdst = 0;
+    unsigned int udst = 0;
+    unsigned long int uldst = 0;
+    unsigned long long int ulldst = 0;
+    if (digits == std::numeric_limits<unsigned int>::digits) {
+        carry = __builtin_ia32_addcarryx_u32(carry, src0, src1, *udst);
+        *dst = *udst;
+    } else if (digits == std::numeric_limits<unsigned long long int>::digits)
+        carry = __builtin_ia32_addcarryx_u64(carry, src0, src1, *ulldst);
+        *dst = *ulldst;
+    } else if (digits < std::numeric_limits<unsigned char>::digits) {
+        tmp = src0 + src1;
+        dst = tmp;
+        carry = tmp >> digits;
+    } else {
+        carry = _addcarry(carry, src0, src1, dst, std::ignore);
+    }
+    return carry;
+}
+
+// Adds src0 and src1 and returns the new carry bit without compiler intrinsics
+template <class C, class T, class... X>
+constexpr C _addcarry(C carry, T src0, T src1, T* dst, X...) noexcept
+{
+    *dst = src0 + src1 + static_cast<T>(static_cast<bool>(carry));
+    return carry ? *dst <= src0 || *dst <= src1 : *dst < src0 || *dst < src1;
+}
+* */
 // -------------------------------------------------------------------------- //
 
 

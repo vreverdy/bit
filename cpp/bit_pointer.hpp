@@ -42,7 +42,7 @@ class bit_pointer
 
     // Lifecycle
     public:
-    bit_pointer() noexcept = default;
+    constexpr bit_pointer() noexcept;
     template <class T> 
     constexpr bit_pointer(const bit_pointer<T>& other) noexcept;
     constexpr bit_pointer(std::nullptr_t) noexcept;
@@ -51,10 +51,10 @@ class bit_pointer
     
     // Assignment
     public:
-    bit_pointer& operator=(std::nullptr_t) noexcept;
-    bit_pointer& operator=(const bit_pointer& other) noexcept;
+    constexpr bit_pointer& operator=(std::nullptr_t) noexcept;
+    constexpr bit_pointer& operator=(const bit_pointer& other) noexcept;
     template <class T> 
-    bit_pointer& operator=(const bit_pointer<T>& other) noexcept;
+    constexpr bit_pointer& operator=(const bit_pointer<T>& other) noexcept;
     
     // Conversion
     public:
@@ -68,14 +68,14 @@ class bit_pointer
     
     // Increment and decrement operators
     public:
-    bit_pointer& operator++();
-    bit_pointer& operator--();
-    bit_pointer operator++(int);
-    bit_pointer operator--(int);
+    constexpr bit_pointer& operator++();
+    constexpr bit_pointer& operator--();
+    constexpr bit_pointer operator++(int);
+    constexpr bit_pointer operator--(int);
     constexpr bit_pointer operator+(difference_type n) const;
     constexpr bit_pointer operator-(difference_type n) const;
-    bit_pointer& operator+=(difference_type n);
-    bit_pointer& operator-=(difference_type n);
+    constexpr bit_pointer& operator+=(difference_type n);
+    constexpr bit_pointer& operator-=(difference_type n);
 
     // Implementation details: data members
     private:
@@ -133,6 +133,14 @@ class bit_pointer
 
 
 // ------------------------- BIT POINTER: LIFECYCLE ------------------------- //
+// Implicitly default constructs a null bit pointer
+template <class WordType>
+constexpr bit_pointer<WordType>::bit_pointer(
+) noexcept
+: _ref(nullptr)
+{
+}
+
 // Implicitly constructs a bit pointer from another bit pointer
 template <class WordType>
 template <class T> 
@@ -177,7 +185,7 @@ constexpr bit_pointer<WordType>::bit_pointer(
 // ------------------------ BIT POINTER: ASSIGNMENT ------------------------- //
 // Assigns a null pointer to the bit pointer
 template <class WordType>
-bit_pointer<WordType>& bit_pointer<WordType>::operator=(
+constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     std::nullptr_t
 ) noexcept
 {
@@ -188,7 +196,7 @@ bit_pointer<WordType>& bit_pointer<WordType>::operator=(
 
 // Copies a bit pointer to the bit pointer
 template <class WordType>
-bit_pointer<WordType>& bit_pointer<WordType>::operator=(
+constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     const bit_pointer& other
 ) noexcept
 {
@@ -200,7 +208,7 @@ bit_pointer<WordType>& bit_pointer<WordType>::operator=(
 // Assigns a bit pointer to the bit pointer
 template <class WordType>
 template <class T> 
-bit_pointer<WordType>& bit_pointer<WordType>::operator=(
+constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     const bit_pointer<T>& other
 ) noexcept
 {
@@ -262,7 +270,7 @@ constexpr bit_reference<WordType> bit_pointer<WordType>::operator[](
 // ------------- BIT POINTER: INCREMENT AND DECREMENT OPERATORS ------------- //
 // Increments the bit pointer and returns it
 template <class WordType>
-bit_pointer<WordType>& bit_pointer<WordType>::operator++(
+constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator++(
 )
 {
     using type = typename std::remove_cv<word_type>::type;
@@ -281,7 +289,7 @@ bit_pointer<WordType>& bit_pointer<WordType>::operator++(
 
 // Decrements the bit pointer and returns it
 template <class WordType>
-bit_pointer<WordType>& bit_pointer<WordType>::operator--(
+constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator--(
 )
 {
     using type = typename std::remove_cv<word_type>::type;
@@ -300,7 +308,7 @@ bit_pointer<WordType>& bit_pointer<WordType>::operator--(
 
 // Increments the bit pointer and returns the old one
 template <class WordType>
-bit_pointer<WordType> bit_pointer<WordType>::operator++(
+constexpr bit_pointer<WordType> bit_pointer<WordType>::operator++(
     int
 )
 {
@@ -311,7 +319,7 @@ bit_pointer<WordType> bit_pointer<WordType>::operator++(
 
 // Decrements the bit pointer and returns the old one
 template <class WordType>
-bit_pointer<WordType> bit_pointer<WordType>::operator--(
+constexpr bit_pointer<WordType> bit_pointer<WordType>::operator--(
     int
 )
 {
@@ -352,7 +360,7 @@ constexpr bit_pointer<WordType> bit_pointer<WordType>::operator-(
 
 // Increments the pointer by several bits and returns it
 template <class WordType>
-bit_pointer<WordType>& bit_pointer<WordType>::operator+=(
+constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator+=(
     difference_type n
 )
 {
@@ -362,7 +370,7 @@ bit_pointer<WordType>& bit_pointer<WordType>::operator+=(
 
 // Decrements the pointer by several bits and returns it
 template <class WordType>
-bit_pointer<WordType>& bit_pointer<WordType>::operator-=(
+constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator-=(
     difference_type n
 )
 {

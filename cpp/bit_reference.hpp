@@ -49,18 +49,18 @@ class bit_reference
 
     // Assignment
     public:
-    bit_reference& operator=(const bit_reference& other) noexcept;
+    constexpr bit_reference& operator=(const bit_reference& other) noexcept;
     template <class T> 
-    bit_reference& operator=(const bit_reference<T>& other) noexcept;
-    bit_reference& operator=(bit_value val) noexcept;
-    bit_reference& assign(word_type val) noexcept;
-    bit_reference& assign(word_type val, size_type pos);
+    constexpr bit_reference& operator=(const bit_reference<T>& other) noexcept;
+    constexpr bit_reference& operator=(bit_value val) noexcept;
+    constexpr bit_reference& assign(word_type val) noexcept;
+    constexpr bit_reference& assign(word_type val, size_type pos);
 
     // Bitwise assignment operators
     public:
-    bit_reference& operator&=(bit_value other) noexcept;
-    bit_reference& operator|=(bit_value other) noexcept;
-    bit_reference& operator^=(bit_value other) noexcept;
+    constexpr bit_reference& operator&=(bit_value other) noexcept;
+    constexpr bit_reference& operator|=(bit_value other) noexcept;
+    constexpr bit_reference& operator^=(bit_value other) noexcept;
     
     // Conversion
     public:
@@ -78,10 +78,10 @@ class bit_reference
 
     // Bit manipulation
     public:
-    void set(bool b) noexcept;
-    void set() noexcept;
-    void reset() noexcept;
-    void flip() noexcept;
+    constexpr bit_reference& set(bool b) noexcept;
+    constexpr bit_reference& set() noexcept;
+    constexpr bit_reference& reset() noexcept;
+    constexpr bit_reference& flip() noexcept;
 
     // Underlying details
     public:
@@ -173,7 +173,7 @@ constexpr bit_reference<WordType>::bit_reference(
 // ----------------------- BIT REFERENCE: ASSIGNMENT ------------------------ //
 // Copies a bit reference to the bit reference
 template <class WordType>
-bit_reference<WordType>& bit_reference<WordType>::operator=(
+constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(
     const bit_reference& other
 ) noexcept
 {
@@ -184,7 +184,7 @@ bit_reference<WordType>& bit_reference<WordType>::operator=(
 // Assigns a bit reference to the bit reference
 template <class WordType>
 template <class T> 
-bit_reference<WordType>& bit_reference<WordType>::operator=(
+constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(
     const bit_reference<T>& other
 ) noexcept
 {
@@ -194,7 +194,7 @@ bit_reference<WordType>& bit_reference<WordType>::operator=(
 
 // Assigns a bit value to the bit reference
 template <class WordType>
-bit_reference<WordType>& bit_reference<WordType>::operator=(
+constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(
     bit_value val
 ) noexcept
 {
@@ -204,7 +204,7 @@ bit_reference<WordType>& bit_reference<WordType>::operator=(
 
 // Assigns the aligned bit of a value to the bit reference
 template <class WordType>
-bit_reference<WordType>& bit_reference<WordType>::assign(
+constexpr bit_reference<WordType>& bit_reference<WordType>::assign(
     word_type val
 ) noexcept
 {
@@ -214,7 +214,7 @@ bit_reference<WordType>& bit_reference<WordType>::assign(
 
 // Assigns an unaligned bit of a value to the bit reference
 template <class WordType>
-bit_reference<WordType>& bit_reference<WordType>::assign(
+constexpr bit_reference<WordType>& bit_reference<WordType>::assign(
     word_type val, 
     size_type pos
 )
@@ -230,7 +230,7 @@ bit_reference<WordType>& bit_reference<WordType>::assign(
 // -------------- BIT REFERENCE: BITWISE ASSIGNMENT OPERATORS --------------- //
 // Assigns the value of the referenced bit through a bitwise and operation
 template <class WordType>
-bit_reference<WordType>& bit_reference<WordType>::operator&=(
+constexpr bit_reference<WordType>& bit_reference<WordType>::operator&=(
     bit_value other
 ) noexcept
 {
@@ -240,7 +240,7 @@ bit_reference<WordType>& bit_reference<WordType>::operator&=(
 
 // Assigns the value of the referenced bit through a bitwise or operation
 template <class WordType>
-bit_reference<WordType>& bit_reference<WordType>::operator|=(
+constexpr bit_reference<WordType>& bit_reference<WordType>::operator|=(
     bit_value other
 ) noexcept
 {
@@ -250,7 +250,7 @@ bit_reference<WordType>& bit_reference<WordType>::operator|=(
 
 // Assigns the value of the referenced bit through a bitwise xor operation
 template <class WordType>
-bit_reference<WordType>& bit_reference<WordType>::operator^=(
+constexpr bit_reference<WordType>& bit_reference<WordType>::operator^=(
     bit_value other
 ) noexcept
 {
@@ -317,35 +317,39 @@ void bit_reference<WordType>::swap(
 // -------------------- BIT REFERENCE: BIT MANIPULATION --------------------- //
 // Sets the value of the referenced bit to the provided boolean value
 template <class WordType>
-void bit_reference<WordType>::set(
+constexpr bit_reference<WordType>& bit_reference<WordType>::set(
     bool b
 ) noexcept
 {
     b ? set() : reset();
+    return *this;
 }
 
 // Sets the value of the referenced bit to 1
 template <class WordType>
-void bit_reference<WordType>::set(
+constexpr bit_reference<WordType>& bit_reference<WordType>::set(
 ) noexcept
 {
     *_ptr |= _mask;
+    return *this;
 }
 
 // Resets the value of the referenced bit to 0
 template <class WordType>
-void bit_reference<WordType>::reset(
+constexpr bit_reference<WordType>& bit_reference<WordType>::reset(
 ) noexcept
 {
     *_ptr &= ~_mask;
+    return *this;
 }
 
 // Flips the value of the referenced bit
 template <class WordType>
-void bit_reference<WordType>::flip(
+constexpr bit_reference<WordType>& bit_reference<WordType>::flip(
 ) noexcept
 {
     *_ptr ^= _mask;
+    return *this;
 }
 // -------------------------------------------------------------------------- //
 

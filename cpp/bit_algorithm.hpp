@@ -28,14 +28,6 @@ namespace bit {
 
 
 
-/* ***************************** BIT CONSTANTS ****************************** */
-// Bit constants
-constexpr bit_value bit0(0U);
-constexpr bit_value bit1(1U);
-/* ************************************************************************** */
-
-
-
 /* ************************** STANDARD ALGORITHMS *************************** */
 // Non-modifying sequence operations
 template <class InputIt> 

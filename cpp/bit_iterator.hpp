@@ -55,7 +55,7 @@ class bit_iterator
     // Assignment
     public:
     template <class T>
-    bit_iterator& operator=(const bit_iterator<T>& other);
+    constexpr bit_iterator& operator=(const bit_iterator<T>& other);
 
     // Access
     public:
@@ -65,14 +65,14 @@ class bit_iterator
 
     // Increment and decrement operators
     public:
-    bit_iterator& operator++();
-    bit_iterator& operator--();
-    bit_iterator operator++(int);
-    bit_iterator operator--(int);
+    constexpr bit_iterator& operator++();
+    constexpr bit_iterator& operator--();
+    constexpr bit_iterator operator++(int);
+    constexpr bit_iterator operator--(int);
     constexpr bit_iterator operator+(difference_type n) const;
     constexpr bit_iterator operator-(difference_type n) const;
-    bit_iterator& operator+=(difference_type n);
-    bit_iterator& operator-=(difference_type n);
+    constexpr bit_iterator& operator+=(difference_type n);
+    constexpr bit_iterator& operator-=(difference_type n);
 
     // Underlying details
     public:
@@ -138,7 +138,7 @@ class bit_iterator
 
 
 // ------------------------ BIT ITERATOR: LIFECYCLE ------------------------- //
-// Default constructs a bit iterator
+// Implicitly default constructs a bit iterator
 template <class Iterator>
 constexpr bit_iterator<Iterator>::bit_iterator(
 )
@@ -186,7 +186,7 @@ constexpr bit_iterator<Iterator>::bit_iterator(
 // Assigns a bit iterator to the bit iterator
 template <class Iterator>
 template <class T> 
-bit_iterator<Iterator>& bit_iterator<Iterator>::operator=(
+constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator=(
     const bit_iterator<T>& other
 )
 {
@@ -239,7 +239,7 @@ bit_iterator<Iterator>::operator[](
 // ------------- BIT ITERATOR: INCREMENT AND DECREMENT OPERATORS ------------ //
 // Increments the bit iterator and returns it
 template <class Iterator>
-bit_iterator<Iterator>& bit_iterator<Iterator>::operator++(
+constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator++(
 )
 {
     constexpr size_type digits = binary_digits<word_type>::value;
@@ -254,7 +254,7 @@ bit_iterator<Iterator>& bit_iterator<Iterator>::operator++(
 
 // Decrements the bit iterator and returns it
 template <class Iterator>
-bit_iterator<Iterator>& bit_iterator<Iterator>::operator--(
+constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator--(
 )
 {
     constexpr size_type digits = binary_digits<word_type>::value;
@@ -269,7 +269,7 @@ bit_iterator<Iterator>& bit_iterator<Iterator>::operator--(
 
 // Increments the bit iterator and returns the old one
 template <class Iterator>
-bit_iterator<Iterator> bit_iterator<Iterator>::operator++(
+constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator++(
     int
 )
 {
@@ -280,7 +280,7 @@ bit_iterator<Iterator> bit_iterator<Iterator>::operator++(
 
 // Decrements the bit iterator and returns the old one
 template <class Iterator>
-bit_iterator<Iterator> bit_iterator<Iterator>::operator--(
+constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator--(
     int
 )
 {
@@ -321,7 +321,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator-(
 
 // Increments the iterator by several bits and returns it
 template <class Iterator>
-bit_iterator<Iterator>& bit_iterator<Iterator>::operator+=(
+constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator+=(
     difference_type n
 )
 {
@@ -331,7 +331,7 @@ bit_iterator<Iterator>& bit_iterator<Iterator>::operator+=(
 
 // Decrements the iterator by several bits and returns it
 template <class Iterator>
-bit_iterator<Iterator>& bit_iterator<Iterator>::operator-=(
+constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator-=(
     difference_type n
 )
 {
