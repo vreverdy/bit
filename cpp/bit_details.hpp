@@ -196,7 +196,7 @@ struct _narrower_type
                 (I + 1 < std::tuple_size<tuple>::value ? I + 1 : -1)
             >::type,
             typename std::tuple_element<I, tuple>::type
-        >::type,
+        >::type
     >::type;
 };
 
@@ -348,6 +348,12 @@ template <class B, class T, class = _supports_sbb_alt<B, T, T, std::nullptr_t>>
 constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept;
 template <class B, class T, class... X>
 constexpr B _subborrow(B borrow, T src0, T src1, T* dst, X...) noexcept;
+
+// Multiword multiply
+template <class T, class T128 = decltype(__uint128_t(T()))>
+constexpr T _mulx(T src0, T src1, T* hi) noexcept;
+template <class T, class... X>
+constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept;
 /* ************************************************************************** */
 
 
@@ -797,17 +803,17 @@ template <class C, class T, class>
 constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept
 {
     static_assert(binary_digits<T>::value, "");
-    using wider_t = _wider_type<T>::type;
+    using wider_t = typename _wider_type<T>::type;
     constexpr T digits = binary_digits<T>::value;
-    unsigned long int uldst = 0;
+    unsigned int udst = 0;
     unsigned long long int ulldst = 0;
     wider_t tmp = 0;
     if (digits == std::numeric_limits<unsigned int>::digits) {
-        carry = __builtin_ia32_addcarryx_u32(carry, src0, src1, *udst);
-        *dst = *udst;
-    } else if (digits == std::numeric_limits<unsigned long long int>::digits)
-        carry = __builtin_ia32_addcarryx_u64(carry, src0, src1, *ulldst);
-        *dst = *ulldst;
+        carry = __builtin_ia32_addcarryx_u32(carry, src0, src1, &udst);
+        *dst = udst;
+    } else if (digits == std::numeric_limits<unsigned long long int>::digits) {
+        carry = __builtin_ia32_addcarryx_u64(carry, src0, src1, &ulldst);
+        *dst = ulldst;
     } else if (digits < binary_digits<wider_t>::value) {
         tmp = static_cast<wider_t>(src0) + static_cast<wider_t>(src1);
         tmp += static_cast<bool>(carry);
@@ -837,17 +843,17 @@ template <class B, class T, class>
 constexpr B _subborrow(B borrow, T src0, T src1, T* dst) noexcept
 {
     static_assert(binary_digits<T>::value, "");
-    using wider_t = _wider_type<T>::type;
+    using wider_t = typename _wider_type<T>::type;
     constexpr T digits = binary_digits<T>::value;
-    unsigned long int uldst = 0;
+    unsigned int udst = 0;
     unsigned long long int ulldst = 0;
     wider_t tmp = 0;
     if (digits == std::numeric_limits<unsigned int>::digits) {
-        borrow = __builtin_ia32_sbb_u32(borrow, src0, src1, *udst);
-        *dst = *udst;
-    } else if (digits == std::numeric_limits<unsigned long long int>::digits)
-        borrow = __builtin_ia32_sbb_u64(borrow, src0, src1, *ulldst);
-        *dst = *ulldst;
+        borrow = __builtin_ia32_sbb_u32(borrow, src0, src1, &udst);
+        *dst = udst;
+    } else if (digits == std::numeric_limits<unsigned long long int>::digits) {
+        borrow = __builtin_ia32_sbb_u64(borrow, src0, src1, &ulldst);
+        *dst = ulldst;
     } else if (digits < binary_digits<wider_t>::value) {
         tmp = static_cast<wider_t>(src1);
         tmp += static_cast<bool>(borrow);
@@ -864,18 +870,18 @@ template <class B, class T, class>
 constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept
 {
     static_assert(binary_digits<T>::value, "");
-    using wider_t = _wider_type<T>::type;
+    using wider_t = typename _wider_type<T>::type;
     constexpr T digits = binary_digits<T>::value;
     B flag = borrow;
-    unsigned long int uldst = 0;
+    unsigned int udst = 0;
     unsigned long long int ulldst = 0;
     wider_t tmp = 0;
     if (digits == std::numeric_limits<unsigned int>::digits) {
-        flag = __builtin_ia32_subborrow_u32(borrow, src0, src1, *udst);
-        *dst = *udst;
-    } else if (digits == std::numeric_limits<unsigned long long int>::digits)
-        flag = __builtin_ia32_subborrow_u64(borrow, src0, src1, *ulldst);
-        *dst = *ulldst;
+        flag = __builtin_ia32_subborrow_u32(borrow, src0, src1, &udst);
+        *dst = udst;
+    } else if (digits == std::numeric_limits<unsigned long long int>::digits) {
+        flag = __builtin_ia32_subborrow_u64(borrow, src0, src1, &ulldst);
+        *dst = ulldst;
     } else if (digits < binary_digits<wider_t>::value) {
         tmp = static_cast<wider_t>(src1);
         tmp += static_cast<bool>(borrow);
@@ -895,6 +901,11 @@ constexpr B _subborrow(B borrow, T src0, T src1, T* dst, X...) noexcept
     *dst = src0 - (src1 + static_cast<T>(static_cast<bool>(borrow)));
     return borrow ? src1 >= src0 : src1 > src0;
 }
+// -------------------------------------------------------------------------- //
+
+
+
+// -------- IMPLEMENTATION DETAILS: INSTRUCTIONS: MULTIWORD MULTIPLY -------- //
 // -------------------------------------------------------------------------- //
 
 
