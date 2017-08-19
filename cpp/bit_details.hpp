@@ -172,6 +172,86 @@ using _widest_type_t = typename _widest_type<T...>::type;
 
 
 
+/* ************ IMPLEMENTATION DETAILS: NARROWER AND WIDER TYPES ************ */
+// Narrower type structure definition
+template <class T, int I = 0>
+struct _narrower_type
+{
+    using tuple = std::tuple<
+        unsigned long long int,
+        unsigned long int,
+        unsigned int,
+        unsigned short int,
+        unsigned char
+    >;
+    using lhs_bits = binary_digits<T>;
+    using rhs_bits = binary_digits<typename std::tuple_element<I, tuple>::type>;
+    using type = typename std::conditional<
+        (lhs_bits::value > rhs_bits::value),
+        typename std::tuple_element<I, tuple>::type,
+        typename std::conditional<
+            (I + 1 < std::tuple_size<tuple>::value),
+            typename _narrower_type<
+                T,
+                (I + 1 < std::tuple_size<tuple>::value ? I + 1 : -1)
+            >::type,
+            typename std::tuple_element<I, tuple>::type
+        >::type,
+    >::type;
+};
+
+// Narrower type structure specialization: not found
+template <class T>
+struct _narrower_type<T, -1>
+{
+    using type = T;
+};
+
+// Narrower type alias
+template <class T>
+using _narrower_type_t = typename _narrower_type<T>::type;
+
+// Wider type structure definition
+template <class T, int I = 0>
+struct _wider_type
+{
+    using tuple = std::tuple<
+        unsigned char,
+        unsigned short int,
+        unsigned int,
+        unsigned long int,
+        unsigned long long int
+    >;
+    using lhs_bits = binary_digits<T>;
+    using rhs_bits = binary_digits<typename std::tuple_element<I, tuple>::type>;
+    using type = typename std::conditional<
+        (lhs_bits::value < rhs_bits::value),
+        typename std::tuple_element<I, tuple>::type,
+        typename std::conditional<
+            (I + 1 < std::tuple_size<tuple>::value),
+            typename _narrower_type<
+                T,
+                (I + 1 < std::tuple_size<tuple>::value ? I + 1 : -1)
+            >::type,
+            typename std::tuple_element<I, tuple>::type
+        >::type
+    >::type;
+};
+
+// Wider type structure specialization: not found
+template <class T>
+struct _wider_type<T, -1>
+{
+    using type = T;
+};
+
+// Wider type alias
+template <class T>
+using _wider_type_t = typename _wider_type<T>::type;
+/* ************************************************************************** */
+
+
+
 /* ******************* IMPLEMENTATION DETAILS: UTILITIES ******************** */
 // Assertions
 template <class Iterator>
@@ -251,11 +331,23 @@ constexpr T _shrd(T dst, T src, T cnt) noexcept;
 
 // Add carry
 template <class... T>
-using _supports_addcarry = decltype(__builtin_ia32_addcarryx_u64(T()...));
-template <class C, class T, class = _supports_addcarry<C, T, T, std::nullptr_t>>
+using _supports_adc = decltype(__builtin_ia32_addcarryx_u64(T()...));
+template <class C, class T, class = _supports_adc<C, T, T, std::nullptr_t>>
 constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept;
 template <class C, class T, class... X>
 constexpr C _addcarry(C carry, T src0, T src1, T* dst, X...) noexcept;
+
+// Sub borrow
+template <class... T>
+using _supports_sbb = decltype(__builtin_ia32_sbb_u64(T()...));
+template <class... T>
+using _supports_sbb_alt = decltype(__builtin_ia32_subborrow_u64(T()...));
+template <class B, class T, class = _supports_sbb<B, T, T, std::nullptr_t>>
+constexpr B _subborrow(B borrow, T src0, T src1, T* dst) noexcept;
+template <class B, class T, class = _supports_sbb_alt<B, T, T, std::nullptr_t>>
+constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept;
+template <class B, class T, class... X>
+constexpr B _subborrow(B borrow, T src0, T src1, T* dst, X...) noexcept;
 /* ************************************************************************** */
 
 
@@ -700,42 +792,109 @@ constexpr T _shrd(T dst, T src, T cnt) noexcept
 
 
 // ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: ADD CARRY ------------- //
-/*
-// Adds src0 and src1 and returns the new carry bit with compiler intrinsics
+// Adds src0 and src1 and returns the new carry bit with intrinsics
 template <class C, class T, class>
 constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept
 {
     static_assert(binary_digits<T>::value, "");
+    using wider_t = _wider_type<T>::type;
     constexpr T digits = binary_digits<T>::value;
-    unsigned char uhhdst = 0;
-    unsigned short int uhdst = 0;
-    unsigned int udst = 0;
     unsigned long int uldst = 0;
     unsigned long long int ulldst = 0;
+    wider_t tmp = 0;
     if (digits == std::numeric_limits<unsigned int>::digits) {
         carry = __builtin_ia32_addcarryx_u32(carry, src0, src1, *udst);
         *dst = *udst;
     } else if (digits == std::numeric_limits<unsigned long long int>::digits)
         carry = __builtin_ia32_addcarryx_u64(carry, src0, src1, *ulldst);
         *dst = *ulldst;
-    } else if (digits < std::numeric_limits<unsigned char>::digits) {
-        tmp = src0 + src1;
-        dst = tmp;
-        carry = tmp >> digits;
+    } else if (digits < binary_digits<wider_t>::value) {
+        tmp = static_cast<wider_t>(src0) + static_cast<wider_t>(src1);
+        tmp += static_cast<bool>(carry);
+        *dst = tmp;
+        carry = static_cast<bool>(tmp >> digits);
     } else {
         carry = _addcarry(carry, src0, src1, dst, std::ignore);
     }
     return carry;
 }
 
-// Adds src0 and src1 and returns the new carry bit without compiler intrinsics
+// Adds src0 and src1 and returns the new carry bit without intrinsics
 template <class C, class T, class... X>
 constexpr C _addcarry(C carry, T src0, T src1, T* dst, X...) noexcept
 {
+    static_assert(binary_digits<T>::value, "");
     *dst = src0 + src1 + static_cast<T>(static_cast<bool>(carry));
     return carry ? *dst <= src0 || *dst <= src1 : *dst < src0 || *dst < src1;
 }
-* */
+// -------------------------------------------------------------------------- //
+
+
+
+// ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: SUB BORROW ------------ //
+// Subtracts src1 to src0 and returns the new borrow bit with intrinsics
+template <class B, class T, class>
+constexpr B _subborrow(B borrow, T src0, T src1, T* dst) noexcept
+{
+    static_assert(binary_digits<T>::value, "");
+    using wider_t = _wider_type<T>::type;
+    constexpr T digits = binary_digits<T>::value;
+    unsigned long int uldst = 0;
+    unsigned long long int ulldst = 0;
+    wider_t tmp = 0;
+    if (digits == std::numeric_limits<unsigned int>::digits) {
+        borrow = __builtin_ia32_sbb_u32(borrow, src0, src1, *udst);
+        *dst = *udst;
+    } else if (digits == std::numeric_limits<unsigned long long int>::digits)
+        borrow = __builtin_ia32_sbb_u64(borrow, src0, src1, *ulldst);
+        *dst = *ulldst;
+    } else if (digits < binary_digits<wider_t>::value) {
+        tmp = static_cast<wider_t>(src1);
+        tmp += static_cast<bool>(borrow);
+        borrow = tmp > static_cast<wider_t>(src0);
+        *dst = static_cast<wider_t>(src0) - tmp;
+    } else {
+        borrow = _subborrow(borrow, src0, src1, dst, std::ignore);
+    }
+    return borrow;
+}
+
+// Subtracts src1 to src0 and returns the new borrow bit with other intrinsics
+template <class B, class T, class>
+constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept
+{
+    static_assert(binary_digits<T>::value, "");
+    using wider_t = _wider_type<T>::type;
+    constexpr T digits = binary_digits<T>::value;
+    B flag = borrow;
+    unsigned long int uldst = 0;
+    unsigned long long int ulldst = 0;
+    wider_t tmp = 0;
+    if (digits == std::numeric_limits<unsigned int>::digits) {
+        flag = __builtin_ia32_subborrow_u32(borrow, src0, src1, *udst);
+        *dst = *udst;
+    } else if (digits == std::numeric_limits<unsigned long long int>::digits)
+        flag = __builtin_ia32_subborrow_u64(borrow, src0, src1, *ulldst);
+        *dst = *ulldst;
+    } else if (digits < binary_digits<wider_t>::value) {
+        tmp = static_cast<wider_t>(src1);
+        tmp += static_cast<bool>(borrow);
+        flag = tmp > static_cast<wider_t>(src0);
+        *dst = static_cast<wider_t>(src0) - tmp;
+    } else {
+        flag = _subborrow(borrow, src0, src1, dst, std::ignore);
+    }
+    return flag;
+}
+
+// Subtracts src1 to src0 and returns the new borrow bit without intrinsics
+template <class B, class T, class... X>
+constexpr B _subborrow(B borrow, T src0, T src1, T* dst, X...) noexcept
+{
+    static_assert(binary_digits<T>::value, "");
+    *dst = src0 - (src1 + static_cast<T>(static_cast<bool>(borrow)));
+    return borrow ? src1 >= src0 : src1 > src0;
+}
 // -------------------------------------------------------------------------- //
 
 
