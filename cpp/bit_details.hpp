@@ -805,9 +805,9 @@ constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept
     static_assert(binary_digits<T>::value, "");
     using wider_t = typename _wider_type<T>::type;
     constexpr T digits = binary_digits<T>::value;
+    wider_t tmp = 0;
     unsigned int udst = 0;
     unsigned long long int ulldst = 0;
-    wider_t tmp = 0;
     if (digits == std::numeric_limits<unsigned int>::digits) {
         carry = __builtin_ia32_addcarryx_u32(carry, src0, src1, &udst);
         *dst = udst;
@@ -816,7 +816,7 @@ constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept
         *dst = ulldst;
     } else if (digits < binary_digits<wider_t>::value) {
         tmp = static_cast<wider_t>(src0) + static_cast<wider_t>(src1);
-        tmp += static_cast<bool>(carry);
+        tmp += static_cast<wider_t>(static_cast<bool>(carry));
         *dst = tmp;
         carry = static_cast<bool>(tmp >> digits);
     } else {
@@ -845,9 +845,9 @@ constexpr B _subborrow(B borrow, T src0, T src1, T* dst) noexcept
     static_assert(binary_digits<T>::value, "");
     using wider_t = typename _wider_type<T>::type;
     constexpr T digits = binary_digits<T>::value;
+    wider_t tmp = 0;
     unsigned int udst = 0;
     unsigned long long int ulldst = 0;
-    wider_t tmp = 0;
     if (digits == std::numeric_limits<unsigned int>::digits) {
         borrow = __builtin_ia32_sbb_u32(borrow, src0, src1, &udst);
         *dst = udst;
@@ -856,7 +856,7 @@ constexpr B _subborrow(B borrow, T src0, T src1, T* dst) noexcept
         *dst = ulldst;
     } else if (digits < binary_digits<wider_t>::value) {
         tmp = static_cast<wider_t>(src1);
-        tmp += static_cast<bool>(borrow);
+        tmp += static_cast<wider_t>(static_cast<bool>(borrow));
         borrow = tmp > static_cast<wider_t>(src0);
         *dst = static_cast<wider_t>(src0) - tmp;
     } else {
@@ -872,10 +872,10 @@ constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept
     static_assert(binary_digits<T>::value, "");
     using wider_t = typename _wider_type<T>::type;
     constexpr T digits = binary_digits<T>::value;
-    B flag = borrow;
+    wider_t tmp = 0;
     unsigned int udst = 0;
     unsigned long long int ulldst = 0;
-    wider_t tmp = 0;
+    B flag = borrow;
     if (digits == std::numeric_limits<unsigned int>::digits) {
         flag = __builtin_ia32_subborrow_u32(borrow, src0, src1, &udst);
         *dst = udst;
@@ -884,7 +884,7 @@ constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept
         *dst = ulldst;
     } else if (digits < binary_digits<wider_t>::value) {
         tmp = static_cast<wider_t>(src1);
-        tmp += static_cast<bool>(borrow);
+        tmp += static_cast<wider_t>(static_cast<bool>(borrow));
         flag = tmp > static_cast<wider_t>(src0);
         *dst = static_cast<wider_t>(src0) - tmp;
     } else {
@@ -906,6 +906,52 @@ constexpr B _subborrow(B borrow, T src0, T src1, T* dst, X...) noexcept
 
 
 // -------- IMPLEMENTATION DETAILS: INSTRUCTIONS: MULTIWORD MULTIPLY -------- //
+// Multiplies src0 and src1 and gets the full result with compiler intrinsics
+template <class T, class T128>
+constexpr T _mulx(T src0, T src1, T* hi) noexcept
+{
+    static_assert(binary_digits<T>::value, "");
+    using wider_t = typename _wider_type<T>::type;
+    constexpr T digits = binary_digits<T>::value;
+    wider_t tmp = 0;
+    T128 tmp128 = 0;
+    T lo = 0;
+    if (digits == std::numeric_limits<std::uint64_t>::digits) {
+        tmp128 = static_cast<T128>(src0) * static_cast<T128>(src1);
+        *hi = tmp128 >> digits;
+        lo = tmp128;
+    } else if (digits + digits == binary_digits<wider_t>::value) {
+        tmp = static_cast<wider_t>(src0) * static_cast<wider_t>(src1);
+        *hi = tmp >> digits;
+        lo = tmp;
+    } else {
+        lo = _mulx(src0, src1, hi, std::ignore);
+    }
+    return lo;
+}
+
+// Multiplies src0 and src1 and gets the full result without compiler intrinsics
+template <class T, class... X>
+constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
+{
+    static_assert(binary_digits<T>::value, "");
+    constexpr T digits = binary_digits<T>::value;
+    constexpr T offset = digits / 2;
+    constexpr T ones = ~static_cast<T>(0);
+    const T lsbs0 = src0 & static_cast<T>(ones >> (digits - offset));
+    const T msbs0 = src0 >> offset;
+    const T lsbs1 = src1 & static_cast<T>(ones >> (digits - offset));
+    const T msbs1 = src1 >> offset;
+    const T llsbs = lsbs0 * lsbs1;
+    const T mlsbs = msbs0 * lsbs1;
+    const T lmsbs = lsbs0 * msbs1;
+    const T mi = mlsbs + lmsbs;
+    const T lo = llsbs + static_cast<T>(mi << offset);
+    const T lcarry = lo < llsbs || lo < static_cast<T>(mi << offset);
+    const T mcarry = static_cast<T>(mi < mlsbs || mi < lmsbs) << offset;
+    *hi = static_cast<T>(mi >> offset) + msbs0 * msbs1 + mcarry + lcarry;
+    return lo;
+}
 // -------------------------------------------------------------------------- //
 
 
