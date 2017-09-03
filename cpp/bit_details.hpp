@@ -39,12 +39,17 @@ template <class Iterator> class bit_iterator;
 // Binary digits structure definition
 template <class UIntType>
 struct binary_digits 
-: std::integral_constant<std::size_t, std::numeric_limits<UIntType>::digits> 
+: std::conditional<
+    std::is_const<UIntType>::value || std::is_volatile<UIntType>::value,
+    binary_digits<typename std::remove_cv<UIntType>::type>,
+    std::integral_constant<std::size_t, std::numeric_limits<UIntType>::digits>
+>::type
 {
     // Assertions
     static_assert(std::is_integral<UIntType>::value, "");
     static_assert(std::is_unsigned<UIntType>::value, "");
     static_assert(!std::is_same<UIntType, bool>::value, "");
+    static_assert(!std::is_same<UIntType, char>::value, "");
 };
 
 // Binary digits value
