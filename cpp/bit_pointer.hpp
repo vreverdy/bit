@@ -200,8 +200,8 @@ constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     const bit_pointer& other
 ) noexcept
 {
-    _ref._ptr = other._ptr;
-    _ref._mask = other._mask;
+    _ref._ptr = other._ref._ptr;
+    _ref._mask = other._ref._mask;
     return *this;
 }
 
@@ -212,8 +212,8 @@ constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     const bit_pointer<T>& other
 ) noexcept
 {
-    _ref._ptr = other._ptr;
-    _ref._mask = other._mask;
+    _ref._ptr = other._ref._ptr;
+    _ref._mask = other._ref._mask;
     return *this;
 }
 // -------------------------------------------------------------------------- //
