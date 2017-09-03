@@ -78,7 +78,7 @@ class bit_iterator
     public:
     constexpr iterator_type base() const;
     constexpr size_type position() const noexcept;
-    constexpr word_type mask() const noexcept;
+    constexpr typename std::remove_cv<word_type>::type mask() const noexcept;
 
     // Implementation details: data members
     private:
@@ -363,8 +363,9 @@ bit_iterator<Iterator>::position(
 
 // Returns a mask corresponding to the bit associated with the iterator
 template <class Iterator>
-constexpr typename bit_iterator<Iterator>::word_type 
-bit_iterator<Iterator>::mask(
+constexpr typename std::remove_cv<
+    typename bit_iterator<Iterator>::word_type 
+>::type bit_iterator<Iterator>::mask(
 ) const noexcept
 {
     return static_cast<word_type>(1) << _position;
