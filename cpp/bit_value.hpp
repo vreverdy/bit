@@ -265,7 +265,7 @@ constexpr bit_value::operator bool(
 
 // ------------------------ BIT VALUE: SWAP MEMBERS ------------------------- //
 // Swaps the bit value with another bit value
-void bit_value::swap(
+inline void bit_value::swap(
     bit_value& other
 ) noexcept
 {
